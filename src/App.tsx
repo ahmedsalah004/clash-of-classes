@@ -107,10 +107,17 @@ function App() {
     });
   }
 
-  function advanceTurn() {
-    if (!state) return;
-    const nextIndex = (state.currentTeamTurnIndex + 1) % state.teams.length;
-    setState({ ...state, currentTeamTurnIndex: nextIndex, currentQuestionId: null, phase: 'board', stealPhase: false });
+  function advanceTurn(nextState: GameState) {
+    const nextIndex = (nextState.currentTeamTurnIndex + 1) % nextState.teams.length;
+    setState({
+      ...nextState,
+      currentTeamTurnIndex: nextIndex,
+      currentQuestionId: null,
+      phase: 'board',
+      stealPhase: false,
+    });
+    setMainRunning(false);
+    setStealRunning(false);
     setScreen('board');
   }
 
@@ -130,13 +137,12 @@ function App() {
       );
     }
 
-    setState({
+    const nextState: GameState = {
       ...state,
       teams: updatedTeams,
       usedQuestionIds: [...state.usedQuestionIds, currentQuestion.question.id],
-    });
-    setStealRunning(false);
-    advanceTurn();
+    };
+    advanceTurn(nextState);
   }
 
   return (
@@ -187,7 +193,7 @@ function App() {
           {showHint && <p><em>Hint: {currentQuestion.question.hint}</em></p>}
           {showAnswer && <p><strong>Answer:</strong> {currentQuestion.question.answer}</p>}
           <hr />
-          <div className="actions"><button onClick={()=>applyOutcome('correct')}>Correct</button><button onClick={()=>{setState({...state,stealPhase:true});setStealTimer(10);setStealRunning(true);}}>Wrong (Go to Steal)</button><button onClick={()=>applyOutcome('none')}>No one correct</button></div>
+          <div className="actions"><button onClick={()=>applyOutcome('correct')}>Correct</button><button onClick={()=>{setState({...state,stealPhase:true});setMainRunning(false);setStealTimer(10);setStealRunning(true);}}>Wrong (Go to Steal)</button><button onClick={()=>applyOutcome('none')}>No one correct</button></div>
           {state.stealPhase && <div><p>Steal timer: {stealTimer}s</p><div className="actions">{state.teams.filter((t)=>t.id!==currentTeam.id).map((t)=><button key={t.id} onClick={()=>applyOutcome('stolen', t.id)}>Stolen by {t.name}</button>)}</div></div>}
         </section>
       )}
