@@ -47,3 +47,17 @@ input, select { padding: .45rem .6rem; border: 1px solid #cbd5e1; border-radius:
 .secondary-btn { background: #64748b; }
 .danger-secondary-btn { background: #fff1f2; color: #9f1239; border: 1px solid #fda4af; font-weight: 700; }
 .setup-actions { margin-top: .8rem; }
+
+.question-screen { display: grid; gap: 1rem; }
+.question-screen-header { display: grid; gap: .55rem; }
+.question-meta-row { display: grid; gap: .35rem; }
+.question-support-label { margin: 0; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; font-weight: 700; color: #475569; }
+.question-title { margin: 0; font-size: clamp(1.4rem, 3.1vw, 2.25rem); line-height: 1.2; color: #0b3a8f; }
+.question-prompt-card { background: linear-gradient(180deg, #f8fbff 0%, #eef4ff 100%); border: 2px solid #bfdbfe; border-radius: 16px; box-shadow: 0 14px 28px rgba(37, 99, 235, .12); padding: clamp(1.15rem, 2.5vw, 2rem); }
+.question-prompt-text { margin: 0; max-width: 34ch; font-size: clamp(1.6rem, 2.5vw, 3rem); line-height: 1.3; font-weight: 800; color: #0f172a; }
+.question-controls-grid { display: grid; gap: .75rem; }
+.question-control-panel { margin: 0; }
+
+@media (max-width: 900px) {
+  .question-prompt-text { max-width: 100%; }
+}

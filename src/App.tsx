@@ -351,16 +351,30 @@ function App() {
           <div className="teams-grid">{teams.map((team, i) => <input key={team.id} value={team.name} onChange={(e) => setTeams((prev) => prev.map((t) => t.id === team.id ? { ...t, name: e.target.value } : t))} style={{ borderColor: TEAM_COLORS[i] }} />)}</div>
           <div className="actions setup-actions"><button disabled={startingGame} onClick={startGame}>{startingGame ? 'Loading Pack...' : 'Start Game'}</button><button className="secondary-btn" onClick={returnToPackSelection}>Back to Pack Selection</button></div></section>}
       {screen === 'board' && state && <section className="panel"><div className="board-header"><h2>{state.pack.title}</h2><button className="danger-secondary-btn" onClick={returnToPackSelection}>Return to Pack Selection</button></div><p className="turn-pill">Current turn: <strong>{state.teams[state.currentTeamTurnIndex].name}</strong></p><p className="board-meta">Remaining questions: <strong>{remainingQuestions}</strong> / {totalQuestions}</p><p className="rules-note"><strong>Play format:</strong> Pick one card → read question → mark outcome. Incorrect answers open a 15s other-team chance phase.</p><div className="score-row">{state.teams.map((team, idx) => <div key={team.id} className={`score-card ${idx === state.currentTeamTurnIndex ? 'score-card-active' : ''}`}><h3>{team.name}</h3><p>{team.points}</p></div>)}</div><div className="board">{state.pack.categories.map((cat) => <div key={cat.id} className="cat-col"><h3>{cat.title}</h3>{cat.questions.map((q) => { const used = state.usedQuestionIds.includes(q.id); return <button key={q.id} disabled={used} className={`card ${used ? 'card-used' : ''}`} onClick={() => openQuestion(q.id)}>{used ? 'Used' : q.points}</button>; })}</div>)}</div></section>}
-      {screen === 'question' && state && currentQuestion && currentTeam && <section className="panel"><div className="question-header"><p className="turn-pill">Current team: <strong>{currentTeam.name}</strong></p><h2>{currentQuestion.category.title} • {currentQuestion.question.points} pts</h2></div><p>{currentQuestion.question.prompt}</p>
-          <div className={`timer-row timer-box ${mainRunning ? 'timer-running' : ''} ${mainTimerUrgent ? 'timer-urgent' : ''}`}><strong>Question Timer: {mainTimer}s</strong><button onClick={() => setMainRunning((v) => !v)}>{mainRunning ? 'Pause' : 'Resume'}</button><button onClick={() => { setMainTimer(MAIN_TIMER_SECONDS); setMainRunning(true); }}>Reset</button></div>
-
-          <div className={`reveal-panel ${revealReady ? 'reveal-ready' : ''}`}>
-            <p><strong>Answer reveal</strong></p>
-            <button onClick={() => setShowAnswer(true)} className={revealReady ? 'highlight-button' : ''}>Show Answer</button>
-            {showAnswer && <p><strong>Answer:</strong> {currentQuestion.question.answer}</p>}
+      {screen === 'question' && state && currentQuestion && currentTeam && <section className="panel question-screen">
+          <div className="question-screen-header">
+            <p className="turn-pill">Current team: <strong>{currentTeam.name}</strong></p>
+            <div className="question-meta-row">
+              <p className="question-support-label">Question</p>
+              <h2 className="question-title">{currentQuestion.category.title} • {currentQuestion.question.points} pts</h2>
+            </div>
           </div>
 
-          <div className="lifeline-panel"><p><strong>Lifelines ({currentTeam.name})</strong></p><div className="actions"><button disabled={currentTeam.lifelinesUsed.mcq} onClick={() => { markLifelineUsed('mcq'); setShowMcq(true); }}>{currentTeam.lifelinesUsed.mcq ? 'MCQ options used' : 'MCQ options'}</button><button disabled={currentTeam.lifelinesUsed.hint} onClick={() => { markLifelineUsed('hint'); setShowHint(true); }}>{currentTeam.lifelinesUsed.hint ? 'Hint used' : 'Hint'}</button><button disabled={currentTeam.lifelinesUsed.twoAnswers} onClick={() => markLifelineUsed('twoAnswers')}>{currentTeam.lifelinesUsed.twoAnswers ? 'Give two answers used' : 'Give two answers'}</button></div></div>
+          <article className="question-prompt-card" aria-label="Question prompt">
+            <p className="question-prompt-text">{currentQuestion.question.prompt}</p>
+          </article>
+
+          <div className="question-controls-grid">
+            <div className={`timer-row timer-box question-control-panel ${mainRunning ? 'timer-running' : ''} ${mainTimerUrgent ? 'timer-urgent' : ''}`}><strong>Question Timer: {mainTimer}s</strong><button onClick={() => setMainRunning((v) => !v)}>{mainRunning ? 'Pause' : 'Resume'}</button><button onClick={() => { setMainTimer(MAIN_TIMER_SECONDS); setMainRunning(true); }}>Reset</button></div>
+
+            <div className={`reveal-panel question-control-panel ${revealReady ? 'reveal-ready' : ''}`}>
+              <p><strong>Answer reveal</strong></p>
+              <button onClick={() => setShowAnswer(true)} className={revealReady ? 'highlight-button' : ''}>Show Answer</button>
+              {showAnswer && <p><strong>Answer:</strong> {currentQuestion.question.answer}</p>}
+            </div>
+
+            <div className="lifeline-panel question-control-panel"><p><strong>Lifelines ({currentTeam.name})</strong></p><div className="actions"><button disabled={currentTeam.lifelinesUsed.mcq} onClick={() => { markLifelineUsed('mcq'); setShowMcq(true); }}>{currentTeam.lifelinesUsed.mcq ? 'MCQ options used' : 'MCQ options'}</button><button disabled={currentTeam.lifelinesUsed.hint} onClick={() => { markLifelineUsed('hint'); setShowHint(true); }}>{currentTeam.lifelinesUsed.hint ? 'Hint used' : 'Hint'}</button><button disabled={currentTeam.lifelinesUsed.twoAnswers} onClick={() => markLifelineUsed('twoAnswers')}>{currentTeam.lifelinesUsed.twoAnswers ? 'Give two answers used' : 'Give two answers'}</button></div></div>
+          </div>
 
           {showMcq && currentQuestion.question.mcqOptions && <ul>{currentQuestion.question.mcqOptions.map((o) => <li key={o}>{o}</li>)}</ul>}
           {showHint && <p><em>Hint: {currentQuestion.question.hint}</em></p>}
