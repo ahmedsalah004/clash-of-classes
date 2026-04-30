@@ -7,7 +7,7 @@ on:
       - main
 
 jobs:
-  build:
+  frontend-build:
     runs-on: ubuntu-latest
 
     steps:
@@ -20,8 +20,35 @@ jobs:
           node-version: 20
           cache: npm
 
-      - name: Install dependencies
+      - name: Install frontend dependencies
         run: npm ci
 
-      - name: Build
+      - name: Build frontend
+        run: npm run build
+
+  worker-content-api-check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install root dependencies (shared TypeScript toolchain)
+        run: npm ci
+
+      - name: Install worker dependencies
+        working-directory: workers/content-api
+        run: npm ci
+
+      - name: Typecheck worker
+        working-directory: workers/content-api
+        run: npm run typecheck
+
+      - name: Build worker
+        working-directory: workers/content-api
         run: npm run build
