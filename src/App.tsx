@@ -351,7 +351,46 @@ function App() {
           </label>
           <div className="teams-grid">{teams.map((team, i) => <input key={team.id} value={team.name} onChange={(e) => setTeams((prev) => prev.map((t) => t.id === team.id ? { ...t, name: e.target.value } : t))} style={{ borderColor: TEAM_COLORS[i] }} />)}</div>
           <div className="actions setup-actions"><button disabled={startingGame} onClick={startGame}>{startingGame ? 'Loading Pack...' : 'Start Game'}</button><button className="secondary-btn" onClick={returnToPackSelection}>Back to Pack Selection</button></div></section>}
-      {screen === 'board' && state && <section className="panel"><div className="board-header"><h2>{state.pack.title}</h2><button className="danger-secondary-btn" onClick={returnToPackSelection}>Return to Pack Selection</button></div><p className="turn-pill">Current turn: <strong>{state.teams[state.currentTeamTurnIndex].name}</strong></p><p className="board-meta">Remaining questions: <strong>{remainingQuestions}</strong> / {totalQuestions}</p><p className="rules-note"><strong>Play format:</strong> Pick one card → read question → mark outcome. Incorrect answers open a 15s other-team chance phase.</p><div className="score-row">{state.teams.map((team, idx) => <div key={team.id} className={`score-card ${idx === state.currentTeamTurnIndex ? 'score-card-active' : ''}`}><h3>{team.name}</h3><p>{team.points}</p></div>)}</div><div className="board">{state.pack.categories.map((cat) => <div key={cat.id} className="cat-col"><h3>{cat.title}</h3>{cat.questions.map((q) => { const used = state.usedQuestionIds.includes(q.id); return <button key={q.id} disabled={used} className={`card ${used ? 'card-used' : ''}`} onClick={() => openQuestion(q.id)}>{used ? 'Used' : q.points}</button>; })}</div>)}</div></section>}
+      {screen === 'board' && state && (
+        <section className="panel board-panel">
+          <div className="board-header">
+            <div className="board-title-block">
+              <p className="board-title-kicker">Classroom Battle Board</p>
+              <h2 className="board-pack-title">{state.pack.title}</h2>
+            </div>
+            <button className="danger-secondary-btn" onClick={returnToPackSelection}>Return to Pack Selection</button>
+          </div>
+          <div className="board-status-row">
+            <p className="turn-pill">Current turn: <strong>{state.teams[state.currentTeamTurnIndex].name}</strong></p>
+            <p className="board-meta">Remaining questions: <strong>{remainingQuestions}</strong> / {totalQuestions}</p>
+          </div>
+          <p className="rules-note"><strong>Play format:</strong> Pick one card → read question → mark outcome. Incorrect answers open a 15s other-team chance phase.</p>
+          <div className="score-row">
+            {state.teams.map((team, idx) => (
+              <div key={team.id} className={`score-card ${idx === state.currentTeamTurnIndex ? 'score-card-active' : ''}`}>
+                <p className="score-label">Team</p>
+                <h3>{team.name}</h3>
+                <p className="score-value">{team.points}</p>
+              </div>
+            ))}
+          </div>
+          <div className="board">
+            {state.pack.categories.map((cat) => (
+              <div key={cat.id} className="cat-col">
+                <h3>{cat.title}</h3>
+                {cat.questions.map((q) => {
+                  const used = state.usedQuestionIds.includes(q.id);
+                  return (
+                    <button key={q.id} disabled={used} className={`card ${used ? 'card-used' : ''}`} onClick={() => openQuestion(q.id)}>
+                      {used ? 'Used' : q.points}
+                    </button>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
       {screen === 'question' && state && currentQuestion && currentTeam && <section className="panel question-screen">
           <div className="question-screen-header">
             <p className="turn-pill question-team-pill">Current team: <strong>{currentTeam.name}</strong></p>
