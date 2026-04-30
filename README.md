@@ -24,6 +24,12 @@ npm run dev
 
 Then open the local URL shown in your terminal (typically `http://localhost:5173`).
 
+### 3) Create a production build
+
+```bash
+npm run build
+```
+
 ## MVP scaffold included
 
 - Homepage branded as **Clash of Classes**
@@ -41,4 +47,5 @@ Then open the local URL shown in your terminal (typically `http://localhost:5173
 - Paid services
 - Firebase / Supabase integrations
 
-This is intentionally a lightweight starting point for future features.
+This is intentionally a lightweight, frontend-only starting point for future features.
+No backend services or secret/API-key configuration are required at this stage.
