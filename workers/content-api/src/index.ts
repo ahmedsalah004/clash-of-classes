@@ -27,6 +27,16 @@ interface Pack {
   sort_order: number;
   points: number;
   difficulty: number;
+  school_track: string;
+  curriculum_system: string;
+  phase: string;
+  level_label: string;
+  year_equivalent: string;
+  grade_equivalent: string;
+  exam_board: string;
+  qualification: string;
+  syllabus_code: string;
+  display_group: string;
   [key: string]: string | number | boolean;
 }
 
@@ -227,16 +237,54 @@ function findNumericByKnownKeys(record: Record<string, string | number | boolean
 }
 
 function mapPack(curriculumId: CurriculumId, record: Record<string, string | number | boolean>): Pack {
+  const name = findByKnownKeys(record, ["name", "pack_title", "title", "pack_id", "id"]);
+  const inferredCambridgeStage = findByKnownKeys(record, ["stage", "cambridge_stage"]);
+  const inferredAmericanGrade = findByKnownKeys(record, ["grade", "us_grade"]);
+
+  const schoolTrack = findByKnownKeys(record, ["school_track"]) || (curriculumId === "cambridge-stage5-science" ? "British" : "American");
+  const curriculumSystem =
+    findByKnownKeys(record, ["curriculum_system"]) || (curriculumId === "cambridge-stage5-science" ? "IG" : "");
+  const phase =
+    findByKnownKeys(record, ["phase"]) ||
+    (curriculumId === "cambridge-stage5-science" ? "Cambridge Primary" : "");
+  const levelLabel =
+    findByKnownKeys(record, ["level_label"]) ||
+    inferredCambridgeStage ||
+    inferredAmericanGrade ||
+    (curriculumId === "cambridge-stage5-science" ? "Stage 5" : "Grade 5");
+  const gradeEquivalent = findByKnownKeys(record, ["grade_equivalent", "grade", "us_grade"]);
+
   return {
     ...record,
     id: findByKnownKeys(record, ["id", "pack_id", "slug"]),
     curriculum_id: curriculumId,
-    name: findByKnownKeys(record, ["name", "pack_title", "title", "pack_id", "id"]),
+    name,
     description: findByKnownKeys(record, ["description", "recommended_use", "notes"]),
     active: Boolean(record.active),
     sort_order: findNumericByKnownKeys(record, ["sort_order"]),
     points: typeof record.points === "number" ? record.points : 0,
     difficulty: typeof record.difficulty === "number" ? record.difficulty : 0,
+    school_track: schoolTrack,
+    curriculum_system: curriculumSystem,
+    phase,
+    level_label: levelLabel,
+    year_equivalent: findByKnownKeys(record, ["year_equivalent"]),
+    grade_equivalent: gradeEquivalent,
+    exam_board: findByKnownKeys(record, ["exam_board"]),
+    qualification: findByKnownKeys(record, ["qualification"]),
+    syllabus_code: findByKnownKeys(record, ["syllabus_code"]),
+    display_group:
+      findByKnownKeys(record, ["display_group"]) ||
+      [
+        schoolTrack,
+        curriculumSystem,
+        phase,
+        levelLabel,
+        findByKnownKeys(record, ["qualification"]),
+        name,
+      ]
+        .filter(Boolean)
+        .join(" / "),
   };
 }
 
