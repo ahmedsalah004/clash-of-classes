@@ -217,15 +217,24 @@ function findByKnownKeys(record: Record<string, string | number | boolean>, keys
   return "";
 }
 
+function findNumericByKnownKeys(record: Record<string, string | number | boolean>, keys: string[]): number {
+  for (const key of keys) {
+    const val = record[key];
+    if (typeof val === "number" && Number.isFinite(val)) return val;
+    if (typeof val === "string" && val.trim()) return normalizeNumber(val);
+  }
+  return 0;
+}
+
 function mapPack(curriculumId: CurriculumId, record: Record<string, string | number | boolean>): Pack {
   return {
     ...record,
     id: findByKnownKeys(record, ["id", "pack_id", "slug"]),
     curriculum_id: curriculumId,
-    name: findByKnownKeys(record, ["name", "pack_name", "title"]),
-    description: findByKnownKeys(record, ["description", "summary"]),
+    name: findByKnownKeys(record, ["name", "pack_title", "title", "pack_id", "id"]),
+    description: findByKnownKeys(record, ["description", "recommended_use", "notes"]),
     active: Boolean(record.active),
-    sort_order: typeof record.sort_order === "number" ? record.sort_order : 0,
+    sort_order: findNumericByKnownKeys(record, ["sort_order"]),
     points: typeof record.points === "number" ? record.points : 0,
     difficulty: typeof record.difficulty === "number" ? record.difficulty : 0,
   };
@@ -238,7 +247,7 @@ function mapCategory(record: Record<string, string | number | boolean>): Categor
     pack_id: findByKnownKeys(record, ["pack_id", "pack", "pack_slug"]),
     name: findByKnownKeys(record, ["name", "category_name", "title"]),
     active: Boolean(record.active),
-    sort_order: typeof record.sort_order === "number" ? record.sort_order : 0,
+    sort_order: findNumericByKnownKeys(record, ["sort_order", "category_sort_order", "category_order"]),
   };
 }
 
@@ -248,7 +257,7 @@ function mapQuestion(record: Record<string, string | number | boolean>): Questio
     id: findByKnownKeys(record, ["id", "question_id"]),
     pack_id: findByKnownKeys(record, ["pack_id", "pack", "pack_slug"]),
     category_id: findByKnownKeys(record, ["category_id", "category", "category_slug"]),
-    prompt: findByKnownKeys(record, ["prompt", "question", "stem"]),
+    prompt: findByKnownKeys(record, ["prompt", "question_text", "question"]),
     active: Boolean(record.active),
     card_order: typeof record.card_order === "number" ? record.card_order : 0,
     points: typeof record.points === "number" ? record.points : 0,
