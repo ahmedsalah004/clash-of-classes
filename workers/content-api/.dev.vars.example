@@ -1,0 +1,10 @@
+CAMBRIDGE_PACKS_CSV_URL="https://example.com/cambridge-packs.csv"
+CAMBRIDGE_CATEGORY_PLAN_CSV_URL="https://example.com/cambridge-category-plan.csv"
+CAMBRIDGE_QUESTION_BANK_CSV_URL="https://example.com/cambridge-question-bank.csv"
+AMERICAN_PACKS_CSV_URL="https://example.com/american-packs.csv"
+AMERICAN_CATEGORY_PLAN_CSV_URL="https://example.com/american-category-plan.csv"
+AMERICAN_QUESTION_BANK_CSV_URL="https://example.com/american-question-bank.csv"
+
+# Optional: comma-separated origins allowed for CORS.
+# Example: "http://localhost:5173,https://your-frontend.example"
+ALLOWED_ORIGINS="http://localhost:5173,http://127.0.0.1:5173,https://frontend.example.com"
