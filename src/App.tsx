@@ -11,12 +11,12 @@ const MAIN_TIMER_SECONDS = 60;
 const OTHER_TEAM_TIMER_SECONDS = 15;
 const MAIN_TIMER_WARNING_SECONDS = 10;
 
-type PackGroup = 'Cambridge Stage 5 Science' | 'American Grade 5 Science' | 'Other Packs';
+type GroupedPacks = { group: string; packs: Pack[] }[];
 
-function sortAndGroupPacks(packs: Pack[]): { group: PackGroup; packs: Pack[] }[] {
-  const byGroupOrder: PackGroup[] = ['Cambridge Stage 5 Science', 'American Grade 5 Science', 'Other Packs'];
+function sortAndGroupPacks(packs: Pack[]): GroupedPacks {
+  const fallbackGroupOrder = ['Cambridge Stage 5 Science', 'American Grade 5 Science', 'Other Packs'];
 
-  const getGroup = (pack: Pack): PackGroup => {
+  const getFallbackGroup = (pack: Pack): string => {
     const stage = pack.stageLabel.toLowerCase();
     const subject = pack.subjectLabel.toLowerCase();
     if (stage.includes('cambridge') && stage.includes('stage 5') && subject.includes('science')) return 'Cambridge Stage 5 Science';
@@ -24,21 +24,33 @@ function sortAndGroupPacks(packs: Pack[]): { group: PackGroup; packs: Pack[] }[]
     return 'Other Packs';
   };
 
+  const getDisplayGroup = (pack: Pack): string => pack.displayGroup?.trim() || getFallbackGroup(pack);
+
+  const fallbackRank = new Map(fallbackGroupOrder.map((group, index) => [group, index]));
+
   const sorted = [...packs].sort((a, b) => {
     if (a.id === RECOMMENDED_PACK_ID) return -1;
     if (b.id === RECOMMENDED_PACK_ID) return 1;
-    const groupCompare = byGroupOrder.indexOf(getGroup(a)) - byGroupOrder.indexOf(getGroup(b));
-    if (groupCompare !== 0) return groupCompare;
+
+    const aGroup = getDisplayGroup(a);
+    const bGroup = getDisplayGroup(b);
+    if (aGroup !== bGroup) {
+      const aRank = fallbackRank.get(aGroup);
+      const bRank = fallbackRank.get(bGroup);
+      if (aRank !== undefined || bRank !== undefined) return (aRank ?? Number.MAX_SAFE_INTEGER) - (bRank ?? Number.MAX_SAFE_INTEGER);
+      return aGroup.localeCompare(bGroup);
+    }
+
     return a.title.localeCompare(b.title);
   });
 
-  const grouped = new Map<PackGroup, Pack[]>();
+  const grouped = new Map<string, Pack[]>();
   for (const pack of sorted) {
-    const group = getGroup(pack);
+    const group = getDisplayGroup(pack);
     grouped.set(group, [...(grouped.get(group) ?? []), pack]);
   }
 
-  return byGroupOrder.map((group) => ({ group, packs: grouped.get(group) ?? [] })).filter((entry) => entry.packs.length > 0);
+  return [...grouped.entries()].map(([group, groupedPacks]) => ({ group, packs: groupedPacks }));
 }
 
 function createTeams(count: number): Team[] {

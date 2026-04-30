@@ -28,6 +28,16 @@ export interface Pack {
   title: string;
   stageLabel: string;
   subjectLabel: string;
+  schoolTrack?: string;
+  curriculumSystem?: string;
+  phase?: string;
+  levelLabel?: string;
+  yearEquivalent?: string;
+  gradeEquivalent?: string;
+  examBoard?: string;
+  qualification?: string;
+  syllabusCode?: string;
+  displayGroup?: string;
   categories: Category[];
 }
 
