@@ -9,6 +9,7 @@ const TEAM_COLORS = ['#1d4ed8', '#047857', '#b45309', '#7c3aed', '#be123c', '#0f
 const RECOMMENDED_PACK_ID = 'y5s-u3-matter';
 const MAIN_TIMER_SECONDS = 60;
 const OTHER_TEAM_TIMER_SECONDS = 15;
+const MAIN_TIMER_WARNING_SECONDS = 10;
 
 type PackGroup = 'Cambridge Stage 5 Science' | 'American Grade 5 Science' | 'Other Packs';
 
@@ -144,7 +145,7 @@ function App() {
   }, [otherTeamTimer]);
 
   useEffect(() => {
-    const isMainWarningWindow = screen === 'question' && state?.phase === 'question' && mainTimer > 0 && mainTimer <= OTHER_TEAM_TIMER_SECONDS;
+    const isMainWarningWindow = screen === 'question' && state?.phase === 'question' && mainTimer > 0 && mainTimer <= MAIN_TIMER_WARNING_SECONDS;
     const isOtherTeamWarningWindow = screen === 'question' && state?.phase === 'question' && state.stealPhase && otherTeamTimer > 0;
     if (isMainWarningWindow || isOtherTeamWarningWindow) {
       ensureWarningSoundPlaying();
