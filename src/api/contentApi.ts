@@ -5,11 +5,31 @@ const DEFAULT_CONTENT_API_BASE_URL = 'https://clash-content-api.clashofclasses.w
 export const CONTENT_API_BASE_URL =
   (import.meta.env.VITE_CONTENT_API_BASE_URL as string | undefined)?.trim() || DEFAULT_CONTENT_API_BASE_URL;
 
-interface WorkerPackSummary { id?: unknown; name?: unknown; curriculum_id?: unknown; }
+interface WorkerPackSummary {
+  id?: unknown;
+  name?: unknown;
+  curriculum_id?: unknown;
+  school_track?: unknown;
+  curriculum_system?: unknown;
+  phase?: unknown;
+  level_label?: unknown;
+  year_equivalent?: unknown;
+  grade_equivalent?: unknown;
+  exam_board?: unknown;
+  qualification?: unknown;
+  syllabus_code?: unknown;
+  display_group?: unknown;
+}
 interface WorkerQuestion { id?: unknown; category_id?: unknown; prompt?: unknown; question_text?: unknown; question?: unknown; answer?: unknown; hint?: unknown; points?: unknown; card_order?: unknown; mcq_options?: unknown; two_answers_options?: unknown; }
 interface WorkerCategory { id?: unknown; name?: unknown; questions?: unknown; }
 interface WorkerPackResponse { pack?: WorkerPackSummary; categories?: unknown; }
 
+
+function toOptionalString(value: unknown): string | undefined {
+  if (typeof value !== 'string') return undefined;
+  const trimmed = value.trim();
+  return trimmed || undefined;
+}
 function toNonEmptyString(value: unknown, fallback: string): string {
   if (typeof value !== 'string') return fallback;
   const trimmed = value.trim();
@@ -69,6 +89,16 @@ function mapPackSummary(workerPack: WorkerPackSummary): Pack {
     title,
     stageLabel,
     subjectLabel,
+    schoolTrack: toOptionalString(workerPack.school_track),
+    curriculumSystem: toOptionalString(workerPack.curriculum_system),
+    phase: toOptionalString(workerPack.phase),
+    levelLabel: toOptionalString(workerPack.level_label),
+    yearEquivalent: toOptionalString(workerPack.year_equivalent),
+    gradeEquivalent: toOptionalString(workerPack.grade_equivalent),
+    examBoard: toOptionalString(workerPack.exam_board),
+    qualification: toOptionalString(workerPack.qualification),
+    syllabusCode: toOptionalString(workerPack.syllabus_code),
+    displayGroup: toOptionalString(workerPack.display_group),
     categories: [],
   };
 }
