@@ -436,7 +436,7 @@ function App() {
             <div className={`reveal-panel question-control-panel ${revealReady ? 'reveal-ready' : ''}`}>
               <p className="panel-title"><strong>Answer reveal</strong></p>
               <button onClick={() => setShowAnswer(true)} className={revealReady ? 'highlight-button' : ''}>Show Answer</button>
-              {showAnswer && <p className="inline-result"><strong>Answer:</strong> {currentQuestion.question.answer}</p>}
+              {showAnswer && <div className="revealed-answer-block" role="status" aria-live="polite" aria-label="Revealed answer"><p className="revealed-answer-label">Answer</p><p className="revealed-answer-text">{currentQuestion.question.answer}</p></div>}
             </div>
 
             <div className="lifeline-panel question-control-panel"><p className="panel-title"><strong>Lifelines ({currentTeam.name})</strong></p><div className="actions compact-actions"><button className="lifeline-btn" disabled={currentTeam.lifelinesUsed.mcq} onClick={() => { markLifelineUsed('mcq'); setShowMcq(true); }}>{currentTeam.lifelinesUsed.mcq ? 'MCQ options used' : 'MCQ options'}</button><button className="lifeline-btn" disabled={currentTeam.lifelinesUsed.hint} onClick={() => { markLifelineUsed('hint'); setShowHint(true); }}>{currentTeam.lifelinesUsed.hint ? 'Hint used' : 'Hint'}</button><button className="lifeline-btn" disabled={currentTeam.lifelinesUsed.twoAnswers} onClick={() => markLifelineUsed('twoAnswers')}>{currentTeam.lifelinesUsed.twoAnswers ? 'Give two answers used' : 'Give two answers'}</button></div></div>
