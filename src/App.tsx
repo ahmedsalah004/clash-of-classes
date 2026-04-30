@@ -405,7 +405,7 @@ function App() {
           </article>
 
           <div className="question-controls-grid">
-            <div className={`timer-row timer-box question-control-panel ${mainRunning ? 'timer-running' : ''} ${mainTimerUrgent ? 'timer-urgent' : ''}`}><strong>Question Timer: {mainTimer}s</strong><button onClick={() => setMainRunning((v) => !v)}>{mainRunning ? 'Pause' : 'Resume'}</button><button onClick={() => { setMainTimer(MAIN_TIMER_SECONDS); setMainRunning(true); }}>Reset</button></div>
+            <div className={`timer-row timer-box question-control-panel premium-timer ${mainRunning ? 'timer-running' : ''} ${mainTimerUrgent ? 'timer-urgent' : ''}`}><strong>Question Timer: {mainTimer}s</strong><button onClick={() => setMainRunning((v) => !v)}>{mainRunning ? 'Pause' : 'Resume'}</button><button onClick={() => { setMainTimer(MAIN_TIMER_SECONDS); setMainRunning(true); }}>Reset</button></div>
 
             <div className={`reveal-panel question-control-panel ${revealReady ? 'reveal-ready' : ''}`}>
               <p className="panel-title"><strong>Answer reveal</strong></p>
@@ -413,15 +413,15 @@ function App() {
               {showAnswer && <p className="inline-result"><strong>Answer:</strong> {currentQuestion.question.answer}</p>}
             </div>
 
-            <div className="lifeline-panel question-control-panel"><p className="panel-title"><strong>Lifelines ({currentTeam.name})</strong></p><div className="actions compact-actions"><button disabled={currentTeam.lifelinesUsed.mcq} onClick={() => { markLifelineUsed('mcq'); setShowMcq(true); }}>{currentTeam.lifelinesUsed.mcq ? 'MCQ options used' : 'MCQ options'}</button><button disabled={currentTeam.lifelinesUsed.hint} onClick={() => { markLifelineUsed('hint'); setShowHint(true); }}>{currentTeam.lifelinesUsed.hint ? 'Hint used' : 'Hint'}</button><button disabled={currentTeam.lifelinesUsed.twoAnswers} onClick={() => markLifelineUsed('twoAnswers')}>{currentTeam.lifelinesUsed.twoAnswers ? 'Give two answers used' : 'Give two answers'}</button></div></div>
+            <div className="lifeline-panel question-control-panel"><p className="panel-title"><strong>Lifelines ({currentTeam.name})</strong></p><div className="actions compact-actions"><button className="lifeline-btn" disabled={currentTeam.lifelinesUsed.mcq} onClick={() => { markLifelineUsed('mcq'); setShowMcq(true); }}>{currentTeam.lifelinesUsed.mcq ? 'MCQ options used' : 'MCQ options'}</button><button className="lifeline-btn" disabled={currentTeam.lifelinesUsed.hint} onClick={() => { markLifelineUsed('hint'); setShowHint(true); }}>{currentTeam.lifelinesUsed.hint ? 'Hint used' : 'Hint'}</button><button className="lifeline-btn" disabled={currentTeam.lifelinesUsed.twoAnswers} onClick={() => markLifelineUsed('twoAnswers')}>{currentTeam.lifelinesUsed.twoAnswers ? 'Give two answers used' : 'Give two answers'}</button></div></div>
           </div>
 
-          {showMcq && currentQuestion.question.mcqOptions && <ul>{currentQuestion.question.mcqOptions.map((o) => <li key={o}>{o}</li>)}</ul>}
-          {showHint && <p><em>Hint: {currentQuestion.question.hint}</em></p>}
+          {showMcq && currentQuestion.question.mcqOptions && <ul className="question-detail-list">{currentQuestion.question.mcqOptions.map((o) => <li key={o}>{o}</li>)}</ul>}
+          {showHint && <p className="question-detail-hint"><em>Hint: {currentQuestion.question.hint}</em></p>}
 
           {state.stealPhase && <div className="steal-box"><p><strong>{otherTeamLabel}</strong></p><p className="other-team-timer">Timer: {otherTeamTimer}s</p><p>Teams that can answer: {canAnswerTeams.map((team) => team.name).join(', ')}</p></div>}
 
-          <hr /><div className="actions outcome-actions"><button onClick={handleCorrect}>✅ Correct</button><button onClick={handleIncorrect}>❌ Incorrect</button>{canAnswerTeams.map((team) => <button key={team.id} onClick={() => handleAnsweredByTeam(team.id)}>Answered by {team.name}</button>)}<button className="cancel-btn" onClick={cancelQuestion}>Back to Board (Cancel Question)</button></div></section>}
+          <hr /><div className="actions outcome-actions"><button className="outcome-correct" onClick={handleCorrect}>✅ Correct</button><button className="outcome-incorrect" onClick={handleIncorrect}>❌ Incorrect</button>{canAnswerTeams.map((team) => <button key={team.id} className="outcome-neutral" onClick={() => handleAnsweredByTeam(team.id)}>Answered by {team.name}</button>)}<button className="cancel-btn outcome-back" onClick={cancelQuestion}>Back to Board (Cancel Question)</button></div></section>}
     </div>;
 }
 
