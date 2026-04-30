@@ -329,16 +329,38 @@ function App() {
     : 'Chance for other team(s) to answer';
 
   return <div className="app-shell"><header><h1>Clash of Classes • Classroom Mode Prototype</h1></header>
-      {screen === 'home' && <section className="panel"><h2>Teacher-led Smartboard Play</h2><button onClick={() => setScreen('pack-selection')}>Start Classroom Mode</button></section>}
-      {screen === 'pack-selection' && <section className="panel"><h2>Select Pack</h2>
-          {packsLoading && <p>Loading available packs...</p>}
-          {packsError && <p><strong>API unavailable:</strong> {packsError} <br />Using local classroom fallback pack.</p>}
+      {screen === 'home' && <section className="panel home-panel">
+          <div className="home-hero">
+            <p className="home-kicker">Classroom Game Host</p>
+            <h2>Teacher-led Smartboard Play</h2>
+            <p className="home-support">Choose a curriculum pack, split the class into teams, and run a live review battle on your smartboard.</p>
+            <div className="home-cta-row"><button className="home-primary-cta" onClick={() => setScreen('pack-selection')}>Start Classroom Mode</button></div>
+          </div>
+        </section>}
+      {screen === 'pack-selection' && <section className="panel pack-selection-panel">
+          <div className="pack-selection-header">
+            <p className="pack-selection-kicker">Classroom Setup</p>
+            <h2>Select a Curriculum Pack</h2>
+            <p className="pack-selection-support">Choose a pack to launch Team Setup. Cambridge and American Grade 5 science packs are grouped for quick scanning.</p>
+          </div>
+          {packsLoading && <div className="status-box status-loading"><p className="status-title">Preparing classroom packs…</p><p>Loading available packs from the content service.</p></div>}
+          {packsError && <div className="status-box status-warning"><p className="status-title">API unavailable</p><p>{packsError}</p><p>Using local classroom fallback pack.</p></div>}
           {!packsLoading && groupedPacks.map((group) => <div key={group.group} className="pack-group">
               <h3 className="pack-group-heading">{group.group}</h3>
-              {group.packs.map((pack) => <button key={pack.id} className="pack-card" onClick={() => { setSelectedPack(pack); setScreen('team-setup'); }}>
-                  <strong className="pack-title">{pack.title} {pack.id === RECOMMENDED_PACK_ID && <span className="recommended-badge">Recommended</span>}</strong>
-                  <span>{pack.stageLabel} / {pack.subjectLabel}</span>
-                </button>)}
+              <div className="pack-grid">
+                {group.packs.map((pack) => {
+                  const recommended = pack.id === RECOMMENDED_PACK_ID;
+                  const selected = selectedPack?.id === pack.id;
+                  return <button key={pack.id} className={`pack-card ${selected ? 'pack-card-selected' : ''}`} onClick={() => { setSelectedPack(pack); setScreen('team-setup'); }}>
+                    <div className="pack-card-top">
+                      <strong className="pack-title">{pack.title}</strong>
+                      {recommended && <span className="recommended-badge">Recommended</span>}
+                    </div>
+                    <span className="pack-card-meta">{pack.stageLabel}</span>
+                    <span className="pack-card-meta">{pack.subjectLabel}</span>
+                  </button>;
+                })}
+              </div>
             </div>)}
         <div className="actions"><button className="secondary-btn" onClick={() => setScreen('home')}>Back to Main Menu</button></div></section>}
       {screen === 'team-setup' && <section className="panel"><h2>Team Setup</h2>
