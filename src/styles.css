@@ -8,6 +8,10 @@ button, select, input { font: inherit; }
 button { border: none; background: #2563eb; color: #fff; padding: .55rem .85rem; border-radius: 10px; cursor: pointer; }
 button:disabled { opacity: .45; cursor: not-allowed; }
 .pack-card { display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; margin-top: .8rem; width: 100%; text-align: left; }
+.pack-group { margin-top: 1rem; }
+.pack-group-heading { margin: 0; font-size: .95rem; color: #334155; }
+.pack-title { display: inline-flex; align-items: center; gap: .45rem; }
+.recommended-badge { font-size: .75rem; font-weight: 700; background: #fef3c7; color: #92400e; border: 1px solid #f59e0b; border-radius: 999px; padding: .1rem .45rem; }
 .teams-grid { display: grid; gap: .6rem; margin: .8rem 0; }
 input, select { padding: .45rem .6rem; border: 1px solid #cbd5e1; border-radius: 8px; }
 .turn-pill { display: inline-block; background: #dbeafe; border: 2px solid #3b82f6; border-radius: 999px; padding: .2rem .7rem; font-size: 1rem; }

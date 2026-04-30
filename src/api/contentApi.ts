@@ -49,12 +49,26 @@ async function fetchJson<T>(path: string): Promise<T> {
 function mapPackSummary(workerPack: WorkerPackSummary): Pack {
   const id = toNonEmptyString(workerPack.id, 'unknown-pack');
   const title = toNonEmptyString(workerPack.name, id);
-  const curriculum = toNonEmptyString(workerPack.curriculum_id, 'unknown-curriculum');
+  const curriculum = toNonEmptyString(workerPack.curriculum_id, 'unknown-curriculum').toLowerCase();
+  const isCambridge = curriculum.includes('cambridge');
+  const isAmerican = curriculum.includes('american') || curriculum.includes('us') || curriculum.includes('ngss');
+  const isStage5 = curriculum.includes('stage-5') || curriculum.includes('stage5') || curriculum.includes('s5');
+  const isGrade5 = curriculum.includes('grade-5') || curriculum.includes('grade5') || curriculum.includes('g5');
+  const isScience = curriculum.includes('science');
+
+  const stageLabel = isCambridge
+    ? `Cambridge ${isStage5 ? 'Stage 5' : 'Science'}`
+    : isAmerican
+      ? `American ${isGrade5 ? 'Grade 5' : 'Curriculum'}`
+      : 'Classroom Pack';
+
+  const subjectLabel = isScience ? 'Science' : 'Curriculum';
+
   return {
     id,
     title,
-    stageLabel: curriculum.includes('cambridge') ? 'Cambridge Stage 5' : 'Classroom Pack',
-    subjectLabel: curriculum.includes('science') ? 'Science' : 'Curriculum',
+    stageLabel,
+    subjectLabel,
     categories: [],
   };
 }

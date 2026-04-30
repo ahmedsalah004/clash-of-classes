@@ -9,6 +9,36 @@ type Outcome = 'correct' | 'wrong' | 'stolen' | 'none';
 const TEAM_COLORS = ['#1d4ed8', '#047857', '#b45309', '#7c3aed', '#be123c', '#0f766e'];
 const RECOMMENDED_PACK_ID = 'y5s-u3-matter';
 
+type PackGroup = 'Cambridge Stage 5 Science' | 'American Grade 5 Science' | 'Other Packs';
+
+function sortAndGroupPacks(packs: Pack[]): { group: PackGroup; packs: Pack[] }[] {
+  const byGroupOrder: PackGroup[] = ['Cambridge Stage 5 Science', 'American Grade 5 Science', 'Other Packs'];
+
+  const getGroup = (pack: Pack): PackGroup => {
+    const stage = pack.stageLabel.toLowerCase();
+    const subject = pack.subjectLabel.toLowerCase();
+    if (stage.includes('cambridge') && stage.includes('stage 5') && subject.includes('science')) return 'Cambridge Stage 5 Science';
+    if (stage.includes('american') && stage.includes('grade 5') && subject.includes('science')) return 'American Grade 5 Science';
+    return 'Other Packs';
+  };
+
+  const sorted = [...packs].sort((a, b) => {
+    if (a.id === RECOMMENDED_PACK_ID) return -1;
+    if (b.id === RECOMMENDED_PACK_ID) return 1;
+    const groupCompare = byGroupOrder.indexOf(getGroup(a)) - byGroupOrder.indexOf(getGroup(b));
+    if (groupCompare !== 0) return groupCompare;
+    return a.title.localeCompare(b.title);
+  });
+
+  const grouped = new Map<PackGroup, Pack[]>();
+  for (const pack of sorted) {
+    const group = getGroup(pack);
+    grouped.set(group, [...(grouped.get(group) ?? []), pack]);
+  }
+
+  return byGroupOrder.map((group) => ({ group, packs: grouped.get(group) ?? [] })).filter((entry) => entry.packs.length > 0);
+}
+
 function createTeams(count: number): Team[] {
   return Array.from({ length: count }, (_, index) => ({
     id: `team-${index + 1}`,
@@ -69,6 +99,7 @@ function App() {
   useEffect(() => { if (stealTimer === 0) setStealRunning(false); }, [stealTimer]);
 
   const currentTeam = useMemo(() => (!state ? null : state.teams[state.currentTeamTurnIndex] ?? null), [state]);
+  const groupedPacks = useMemo(() => sortAndGroupPacks(availablePacks), [availablePacks]);
   const currentQuestion = useMemo(() => {
     if (!state?.currentQuestionId || !state.pack) return null;
     for (const category of state.pack.categories) {
@@ -125,10 +156,13 @@ function App() {
       {screen === 'pack-selection' && <section className="panel"><h2>Select Pack</h2>
           {packsLoading && <p>Loading available packs...</p>}
           {packsError && <p><strong>API unavailable:</strong> {packsError} <br />Using local classroom fallback pack.</p>}
-          {!packsLoading && availablePacks.map((pack) => <button key={pack.id} className="pack-card" onClick={() => { setSelectedPack(pack); setScreen('team-setup'); }}>
-              <strong>{pack.title}{pack.id === RECOMMENDED_PACK_ID ? ' (Recommended)' : ''}</strong>
-              <span>{pack.stageLabel} / {pack.subjectLabel}</span>
-            </button>)}
+          {!packsLoading && groupedPacks.map((group) => <div key={group.group} className="pack-group">
+              <h3 className="pack-group-heading">{group.group}</h3>
+              {group.packs.map((pack) => <button key={pack.id} className="pack-card" onClick={() => { setSelectedPack(pack); setScreen('team-setup'); }}>
+                  <strong className="pack-title">{pack.title} {pack.id === RECOMMENDED_PACK_ID && <span className="recommended-badge">Recommended</span>}</strong>
+                  <span>{pack.stageLabel} / {pack.subjectLabel}</span>
+                </button>)}
+            </div>)}
         </section>}
       {screen === 'team-setup' && <section className="panel"><h2>Team Setup</h2>
           {selectedPack && <p>Selected pack: <strong>{selectedPack.title}</strong></p>}
