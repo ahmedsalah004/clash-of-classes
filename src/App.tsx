@@ -328,12 +328,17 @@ function App() {
     ? `Chance for ${canAnswerTeams[0].name} to answer`
     : 'Chance for other team(s) to answer';
 
-  return <div className="app-shell"><header><h1>Clash of Classes • Classroom Mode Prototype</h1></header>
+  return <div className="app-shell"><header><h1>Clash of Classes • Classroom Mode</h1></header>
       {screen === 'home' && <section className="panel home-panel">
           <div className="home-hero">
             <p className="home-kicker">Classroom Game Host</p>
-            <h2>Teacher-led Smartboard Play</h2>
-            <p className="home-support">Choose a curriculum pack, split the class into teams, and run a live review battle on your smartboard.</p>
+            <h2>Turn Review Time into a Team Challenge</h2>
+            <p className="home-support">Launch in under a minute: pick a curriculum pack, set team names, and run an energetic whole-class quiz battle from your board.</p>
+            <ul className="home-benefits" aria-label="Key classroom benefits">
+              <li>Fast setup with curriculum-aligned packs</li>
+              <li>Built for live hosting with clear score tracking</li>
+              <li>Great for lesson warm-ups, review, and exit tickets</li>
+            </ul>
             <div className="home-cta-row"><button className="home-primary-cta" onClick={() => setScreen('pack-selection')}>Start Classroom Mode</button></div>
           </div>
         </section>}
@@ -341,7 +346,7 @@ function App() {
           <div className="pack-selection-header">
             <p className="pack-selection-kicker">Classroom Setup</p>
             <h2>Select a Curriculum Pack</h2>
-            <p className="pack-selection-support">Choose a pack to launch Team Setup. Cambridge and American Grade 5 science packs are grouped for quick scanning.</p>
+            <p className="pack-selection-support">Choose a pack to launch Team Setup. Packs are grouped by curriculum so teachers can scan quickly and pick confidently.</p>
           </div>
           {packsLoading && <div className="status-box status-loading"><p className="status-title">Preparing classroom packs…</p><p>Loading available packs from the content service.</p></div>}
           {packsError && <div className="status-box status-warning"><p className="status-title">API unavailable</p><p>{packsError}</p><p>Using local classroom fallback pack.</p></div>}
