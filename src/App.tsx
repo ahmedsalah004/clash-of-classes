@@ -293,9 +293,9 @@ function App() {
           {showMcq && currentQuestion.question.mcqOptions && <ul>{currentQuestion.question.mcqOptions.map((o) => <li key={o}>{o}</li>)}</ul>}
           {showHint && <p><em>Hint: {currentQuestion.question.hint}</em></p>}
 
-          {state.stealPhase && <div className="steal-box"><p><strong>{otherTeamLabel}</strong></p><p className="other-team-timer">Timer: {otherTeamTimer}s</p><p>Teams that can answer: {canAnswerTeams.map((team) => team.name).join(', ')}</p><div className="actions">{canAnswerTeams.map((team) => <button key={team.id} onClick={() => handleAnsweredByTeam(team.id)}>Answered by {team.name}</button>)}</div></div>}
+          {state.stealPhase && <div className="steal-box"><p><strong>{otherTeamLabel}</strong></p><p className="other-team-timer">Timer: {otherTeamTimer}s</p><p>Teams that can answer: {canAnswerTeams.map((team) => team.name).join(', ')}</p></div>}
 
-          <hr /><div className="actions outcome-actions"><button onClick={handleCorrect}>✅ Correct</button><button onClick={handleIncorrect}>❌ Incorrect</button>{state.stealPhase && canAnswerTeams.map((team) => <button key={team.id} onClick={() => handleAnsweredByTeam(team.id)}>Answered by {team.name}</button>)}<button className="cancel-btn" onClick={cancelQuestion}>Back to Board (Cancel Question)</button></div></section>}
+          <hr /><div className="actions outcome-actions"><button onClick={handleCorrect}>✅ Correct</button><button onClick={handleIncorrect}>❌ Incorrect</button>{canAnswerTeams.map((team) => <button key={team.id} onClick={() => handleAnsweredByTeam(team.id)}>Answered by {team.name}</button>)}<button className="cancel-btn" onClick={cancelQuestion}>Back to Board (Cancel Question)</button></div></section>}
     </div>;
 }
 
