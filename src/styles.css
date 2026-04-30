@@ -58,6 +58,13 @@ input, select { padding: .45rem .6rem; border: 1px solid #cbd5e1; border-radius:
 .question-controls-grid { display: grid; gap: .75rem; }
 .question-control-panel { margin: 0; }
 
+.question-team-pill { justify-self: start; width: fit-content; max-width: 100%; }
+.panel-title { margin: 0 0 .45rem; }
+.inline-result { margin: .45rem 0 0; }
+.compact-actions { margin: .35rem 0 0; }
+.reveal-panel, .lifeline-panel { padding: .55rem .65rem; }
+.question-controls-grid .actions { margin: .35rem 0 0; }
+
 @media (max-width: 900px) {
   .question-prompt-text { max-width: 100%; }
 }
