@@ -108,7 +108,31 @@ input:focus, select:focus { outline: 3px solid rgba(56, 189, 248, .35); border-c
   box-shadow: 0 4px 10px rgba(37, 99, 235, .16);
 }
 .panel-title { margin: 0 0 .45rem; }
-.inline-result { margin: .45rem 0 0; }
+.revealed-answer-block {
+  margin-top: .2rem;
+  border: 1px solid #9fbdf0;
+  border-radius: 12px;
+  padding: .6rem .75rem .72rem;
+  background: linear-gradient(180deg, #f2f7ff 0%, #e3eeff 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 8px 16px rgba(37, 99, 235, .12);
+}
+.revealed-answer-label {
+  margin: 0;
+  font-size: .72rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-weight: 800;
+  color: #385684;
+}
+.revealed-answer-text {
+  margin: .2rem 0 0;
+  font-size: clamp(1.5rem, 2.9vw, 2.3rem);
+  line-height: 1.12;
+  font-weight: 900;
+  letter-spacing: .01em;
+  color: #0c2a5f;
+  text-wrap: balance;
+}
 .compact-actions { margin: .35rem 0 0; }
 .reveal-panel, .lifeline-panel { padding: .68rem .78rem; }
 .question-controls-grid .actions { margin: .35rem 0 0; }
