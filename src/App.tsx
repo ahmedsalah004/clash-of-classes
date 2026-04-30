@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { fetchPackById, fetchPackSummaries } from './api/contentApi';
 import { sampleMatterPack } from './data/sampleMatterPack';
 import type { GameState, LifelineKey, Pack, Team } from './types/game';
@@ -67,6 +67,29 @@ function App() {
   const [showAnswer, setShowAnswer] = useState(false);
   const [showMcq, setShowMcq] = useState(false);
   const [showHint, setShowHint] = useState(false);
+  const warningAudioRef = useRef<HTMLAudioElement | null>(null);
+  const warningSoundPlayingRef = useRef(false);
+
+  function stopWarningSound(resetToStart = false) {
+    const audio = warningAudioRef.current;
+    if (!audio) return;
+    audio.pause();
+    if (resetToStart) audio.currentTime = 0;
+    warningSoundPlayingRef.current = false;
+  }
+
+  function ensureWarningSoundPlaying() {
+    const audio = warningAudioRef.current;
+    if (!audio || warningSoundPlayingRef.current) return;
+    audio.loop = true;
+    audio.play()
+      .then(() => {
+        warningSoundPlayingRef.current = true;
+      })
+      .catch(() => {
+        warningSoundPlayingRef.current = false;
+      });
+  }
 
   useEffect(() => {
     if (screen !== 'pack-selection') return;
@@ -119,6 +142,26 @@ function App() {
   useEffect(() => {
     if (otherTeamTimer === 0) setOtherTeamRunning(false);
   }, [otherTeamTimer]);
+
+  useEffect(() => {
+    const isMainWarningWindow = screen === 'question' && state?.phase === 'question' && mainTimer > 0 && mainTimer <= OTHER_TEAM_TIMER_SECONDS;
+    const isOtherTeamWarningWindow = screen === 'question' && state?.phase === 'question' && state.stealPhase && otherTeamTimer > 0;
+    if (isMainWarningWindow || isOtherTeamWarningWindow) {
+      ensureWarningSoundPlaying();
+      return;
+    }
+    stopWarningSound();
+  }, [screen, state, mainTimer, otherTeamTimer]);
+
+  useEffect(() => {
+    const audio = new Audio('/assets/sounds/timer-warning.mp3');
+    audio.preload = 'auto';
+    warningAudioRef.current = audio;
+    return () => {
+      stopWarningSound(true);
+      warningAudioRef.current = null;
+    };
+  }, []);
 
   const currentTeam = useMemo(() => (!state ? null : state.teams[state.currentTeamTurnIndex] ?? null), [state]);
   const groupedPacks = useMemo(() => sortAndGroupPacks(availablePacks), [availablePacks]);
@@ -174,6 +217,7 @@ function App() {
 
   function openQuestion(id: string) {
     if (!state) return;
+    stopWarningSound(true);
     setState({ ...state, currentQuestionId: id, phase: 'question', stealPhase: false });
     setMainTimer(MAIN_TIMER_SECONDS);
     setMainRunning(true);
@@ -187,6 +231,7 @@ function App() {
 
   function cancelQuestion() {
     if (!state) return;
+    stopWarningSound(true);
     setState({ ...state, currentQuestionId: null, phase: 'board', stealPhase: false });
     setMainRunning(false);
     setOtherTeamRunning(false);
@@ -204,6 +249,7 @@ function App() {
   }
 
   function advanceTurn(nextState: GameState) {
+    stopWarningSound(true);
     const nextIndex = (nextState.currentTeamTurnIndex + 1) % nextState.teams.length;
     setState({ ...nextState, currentTeamTurnIndex: nextIndex, currentQuestionId: null, phase: 'board', stealPhase: false });
     setMainRunning(false);
@@ -238,6 +284,7 @@ function App() {
       setOtherTeamRunning(true);
       return;
     }
+    stopWarningSound(true);
     consumeQuestion(state.teams);
   }
 
