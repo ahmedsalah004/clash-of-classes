@@ -30,10 +30,15 @@ input, select { padding: .45rem .6rem; border: 1px solid #cbd5e1; border-radius:
 .actions, .timer-row { display: flex; flex-wrap: wrap; gap: .55rem; margin: .65rem 0; align-items: center; }
 .timer-box { border: 2px solid #93c5fd; background: #eff6ff; border-radius: 10px; padding: .5rem .7rem; }
 .timer-running { border-color: #2563eb; background: #dbeafe; }
+.timer-urgent { border-color: #dc2626; background: #fee2e2; color: #7f1d1d; }
+.reveal-panel { border: 1px solid #e2e8f0; border-radius: 10px; padding: .6rem; background: #fff; margin-bottom: .6rem; }
+.reveal-ready { border-color: #d97706; background: #fffbeb; }
+.highlight-button { background: #d97706; box-shadow: 0 0 0 3px #fde68a; }
 .lifeline-panel { border: 1px solid #e2e8f0; border-radius: 10px; padding: .6rem; background: #f8fafc; }
 .outcome-actions button { font-weight: 700; }
 .cancel-btn { background: #475569; }
 .steal-box { border: 2px solid #f59e0b; background: #fef3c7; border-radius: 10px; padding: .7rem; margin-top: .6rem; }
+.other-team-timer { font-size: 1.15rem; font-weight: 800; margin: .25rem 0; }
 @media (max-width: 900px) {
   .board { grid-template-columns: repeat(3, minmax(130px, 1fr)); }
 }
