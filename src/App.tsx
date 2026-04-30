@@ -183,6 +183,30 @@ function App() {
     return state.teams.filter((team) => team.id !== currentTeam.id);
   }, [state, currentTeam]);
 
+
+  function resetGameSession() {
+    stopWarningSound(true);
+    setState(null);
+    setTeams(createTeams(teamCount));
+    setMainTimer(MAIN_TIMER_SECONDS);
+    setMainRunning(false);
+    setOtherTeamTimer(OTHER_TEAM_TIMER_SECONDS);
+    setOtherTeamRunning(false);
+    setShowAnswer(false);
+    setShowMcq(false);
+    setShowHint(false);
+  }
+
+  function returnToPackSelection() {
+    if (screen === 'board') {
+      const confirmed = window.confirm('Return to pack selection? Current scores and used questions will be lost.');
+      if (!confirmed) return;
+    }
+    resetGameSession();
+    setPackStartError(null);
+    setScreen('pack-selection');
+  }
+
   async function startGame() {
     if (!selectedPack) return;
     setPackStartError(null);
@@ -315,7 +339,7 @@ function App() {
                   <span>{pack.stageLabel} / {pack.subjectLabel}</span>
                 </button>)}
             </div>)}
-        </section>}
+        <div className="actions"><button className="secondary-btn" onClick={() => setScreen('home')}>Back to Main Menu</button></div></section>}
       {screen === 'team-setup' && <section className="panel"><h2>Team Setup</h2>
           {selectedPack && <p>Selected pack: <strong>{selectedPack.title}</strong></p>}
           {packStartError && <p><strong>Could not start game:</strong> {packStartError}</p>}
@@ -325,8 +349,8 @@ function App() {
             </select>
           </label>
           <div className="teams-grid">{teams.map((team, i) => <input key={team.id} value={team.name} onChange={(e) => setTeams((prev) => prev.map((t) => t.id === team.id ? { ...t, name: e.target.value } : t))} style={{ borderColor: TEAM_COLORS[i] }} />)}</div>
-          <button disabled={startingGame} onClick={startGame}>{startingGame ? 'Loading Pack...' : 'Start Game'}</button></section>}
-      {screen === 'board' && state && <section className="panel"><h2>{state.pack.title}</h2><p className="turn-pill">Current turn: <strong>{state.teams[state.currentTeamTurnIndex].name}</strong></p><p className="board-meta">Remaining questions: <strong>{remainingQuestions}</strong> / {totalQuestions}</p><p className="rules-note"><strong>Play format:</strong> Pick one card → read question → mark outcome. Incorrect answers open a 15s other-team chance phase.</p><div className="score-row">{state.teams.map((team, idx) => <div key={team.id} className={`score-card ${idx === state.currentTeamTurnIndex ? 'score-card-active' : ''}`}><h3>{team.name}</h3><p>{team.points}</p></div>)}</div><div className="board">{state.pack.categories.map((cat) => <div key={cat.id} className="cat-col"><h3>{cat.title}</h3>{cat.questions.map((q) => { const used = state.usedQuestionIds.includes(q.id); return <button key={q.id} disabled={used} className={`card ${used ? 'card-used' : ''}`} onClick={() => openQuestion(q.id)}>{used ? 'Used' : q.points}</button>; })}</div>)}</div></section>}
+          <div className="actions setup-actions"><button disabled={startingGame} onClick={startGame}>{startingGame ? 'Loading Pack...' : 'Start Game'}</button><button className="secondary-btn" onClick={returnToPackSelection}>Back to Pack Selection</button></div></section>}
+      {screen === 'board' && state && <section className="panel"><div className="board-header"><h2>{state.pack.title}</h2><button className="danger-secondary-btn" onClick={returnToPackSelection}>Return to Pack Selection</button></div><p className="turn-pill">Current turn: <strong>{state.teams[state.currentTeamTurnIndex].name}</strong></p><p className="board-meta">Remaining questions: <strong>{remainingQuestions}</strong> / {totalQuestions}</p><p className="rules-note"><strong>Play format:</strong> Pick one card → read question → mark outcome. Incorrect answers open a 15s other-team chance phase.</p><div className="score-row">{state.teams.map((team, idx) => <div key={team.id} className={`score-card ${idx === state.currentTeamTurnIndex ? 'score-card-active' : ''}`}><h3>{team.name}</h3><p>{team.points}</p></div>)}</div><div className="board">{state.pack.categories.map((cat) => <div key={cat.id} className="cat-col"><h3>{cat.title}</h3>{cat.questions.map((q) => { const used = state.usedQuestionIds.includes(q.id); return <button key={q.id} disabled={used} className={`card ${used ? 'card-used' : ''}`} onClick={() => openQuestion(q.id)}>{used ? 'Used' : q.points}</button>; })}</div>)}</div></section>}
       {screen === 'question' && state && currentQuestion && currentTeam && <section className="panel"><div className="question-header"><p className="turn-pill">Current team: <strong>{currentTeam.name}</strong></p><h2>{currentQuestion.category.title} • {currentQuestion.question.points} pts</h2></div><p>{currentQuestion.question.prompt}</p>
           <div className={`timer-row timer-box ${mainRunning ? 'timer-running' : ''} ${mainTimerUrgent ? 'timer-urgent' : ''}`}><strong>Question Timer: {mainTimer}s</strong><button onClick={() => setMainRunning((v) => !v)}>{mainRunning ? 'Pause' : 'Resume'}</button><button onClick={() => { setMainTimer(MAIN_TIMER_SECONDS); setMainRunning(true); }}>Reset</button></div>
 
