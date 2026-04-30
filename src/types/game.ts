@@ -35,7 +35,7 @@ export interface Team {
   id: string;
   name: string;
   points: number;
-  lifelinesUsedThisRound: Lifeline;
+  lifelinesUsed: Lifeline;
 }
 
 export interface GameState {

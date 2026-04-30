@@ -10,12 +10,26 @@ button:disabled { opacity: .45; cursor: not-allowed; }
 .pack-card { display: flex; flex-direction: column; align-items: flex-start; gap: .35rem; margin-top: .8rem; width: 100%; text-align: left; }
 .teams-grid { display: grid; gap: .6rem; margin: .8rem 0; }
 input, select { padding: .45rem .6rem; border: 1px solid #cbd5e1; border-radius: 8px; }
+.turn-pill { display: inline-block; background: #dbeafe; border: 2px solid #3b82f6; border-radius: 999px; padding: .2rem .7rem; font-size: 1rem; }
+.board-meta { margin: .6rem 0 .3rem; }
+.rules-note { margin: 0 0 .8rem; background: #f8fafc; border-left: 4px solid #334155; padding: .45rem .6rem; border-radius: 8px; }
 .board { display: grid; grid-template-columns: repeat(6, minmax(130px, 1fr)); gap: .7rem; overflow-x: auto; }
 .cat-col { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: .6rem; display: grid; gap: .45rem; }
 .cat-col h3 { margin: 0; font-size: .9rem; min-height: 3rem; }
-.card { width: 100%; font-size: 1.05rem; font-weight: 700; background: #0ea5e9; }
+.card { width: 100%; font-size: 1.1rem; font-weight: 800; background: #0ea5e9; min-height: 2.5rem; }
+.card-used { background: #94a3b8; color: #f8fafc; text-decoration: line-through; }
 .score-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: .6rem; margin: .7rem 0; }
-.score-card { background: #eff6ff; border-radius: 10px; padding: .5rem; }
+.score-card { background: #eff6ff; border-radius: 10px; padding: .5rem; border: 2px solid transparent; }
+.score-card-active { border-color: #2563eb; background: #dbeafe; box-shadow: inset 0 0 0 1px #2563eb; }
 .score-card h3, .score-card p { margin: 0; }
+.question-header h2 { margin: .55rem 0; font-size: clamp(1.2rem, 3vw, 1.8rem); }
 .actions, .timer-row { display: flex; flex-wrap: wrap; gap: .55rem; margin: .65rem 0; align-items: center; }
-@media (max-width: 900px) { .board { grid-template-columns: repeat(3, minmax(130px, 1fr)); } }
+.timer-box { border: 2px solid #93c5fd; background: #eff6ff; border-radius: 10px; padding: .5rem .7rem; }
+.timer-running { border-color: #2563eb; background: #dbeafe; }
+.lifeline-panel { border: 1px solid #e2e8f0; border-radius: 10px; padding: .6rem; background: #f8fafc; }
+.outcome-actions button { font-weight: 700; }
+.cancel-btn { background: #475569; }
+.steal-box { border: 2px solid #f59e0b; background: #fef3c7; border-radius: 10px; padding: .7rem; margin-top: .6rem; }
+@media (max-width: 900px) {
+  .board { grid-template-columns: repeat(3, minmax(130px, 1fr)); }
+}

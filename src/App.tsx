@@ -12,7 +12,7 @@ function createTeams(count: number): Team[] {
     id: `team-${index + 1}`,
     name: `Team ${index + 1}`,
     points: 0,
-    lifelinesUsedThisRound: {
+    lifelinesUsed: {
       mcq: false,
       hint: false,
       twoAnswers: false,
@@ -68,6 +68,16 @@ function App() {
     return null;
   }, [state]);
 
+  const totalQuestions = useMemo(() => {
+    if (!state) return 0;
+    return state.pack.categories.reduce((sum, category) => sum + category.questions.length, 0);
+  }, [state]);
+
+  const remainingQuestions = useMemo(() => {
+    if (!state) return 0;
+    return totalQuestions - state.usedQuestionIds.length;
+  }, [state, totalQuestions]);
+
   function startGame() {
     if (!selectedPack) return;
     setState({
@@ -95,13 +105,21 @@ function App() {
     setScreen('question');
   }
 
+  function cancelQuestion() {
+    if (!state) return;
+    setState({ ...state, currentQuestionId: null, phase: 'board', stealPhase: false });
+    setMainRunning(false);
+    setStealRunning(false);
+    setScreen('board');
+  }
+
   function markLifelineUsed(kind: LifelineKey) {
     if (!state || !currentTeam) return;
     setState({
       ...state,
       teams: state.teams.map((team) =>
         team.id === currentTeam.id
-          ? { ...team, lifelinesUsedThisRound: { ...team.lifelinesUsedThisRound, [kind]: true } }
+          ? { ...team, lifelinesUsed: { ...team.lifelinesUsed, [kind]: true } }
           : team,
       ),
     });
@@ -168,33 +186,44 @@ function App() {
               const nextTeams = createTeams(count);
               setTeams((prev) => nextTeams.map((team, i) => ({ ...team, name: prev[i]?.name ?? team.name })));
             }}>
-              {[2,3,4,5,6].map((n) => <option key={n} value={n}>{n}</option>)}
+              {[2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           </label>
-          <div className="teams-grid">{teams.map((team, i) => <input key={team.id} value={team.name} onChange={(e)=>setTeams((prev)=>prev.map((t)=>t.id===team.id?{...t,name:e.target.value}:t))} style={{borderColor: TEAM_COLORS[i]}} />)}</div>
+          <div className="teams-grid">{teams.map((team, i) => <input key={team.id} value={team.name} onChange={(e) => setTeams((prev) => prev.map((t) => t.id === team.id ? { ...t, name: e.target.value } : t))} style={{ borderColor: TEAM_COLORS[i] }} />)}</div>
           <button onClick={startGame}>Start Game</button>
         </section>
       )}
       {screen === 'board' && state && (
         <section className="panel">
           <h2>{state.pack.title}</h2>
-          <p>Current turn: <strong>{state.teams[state.currentTeamTurnIndex].name}</strong></p>
-          <div className="score-row">{state.teams.map((team)=><div key={team.id} className="score-card"><h3>{team.name}</h3><p>{team.points}</p></div>)}</div>
-          <div className="board">{state.pack.categories.map((cat)=><div key={cat.id} className="cat-col"><h3>{cat.title}</h3>{cat.questions.map((q)=><button key={q.id} disabled={state.usedQuestionIds.includes(q.id)} className="card" onClick={()=>openQuestion(q.id)}>{q.points}</button>)}</div>)}</div>
+          <p className="turn-pill">Current turn: <strong>{state.teams[state.currentTeamTurnIndex].name}</strong></p>
+          <p className="board-meta">Remaining questions: <strong>{remainingQuestions}</strong> / {totalQuestions}</p>
+          <p className="rules-note"><strong>Play format:</strong> Pick one card → read question → mark outcome. Wrong answers enter a 10s steal phase for other teams.</p>
+          <div className="score-row">{state.teams.map((team, idx) => <div key={team.id} className={`score-card ${idx === state.currentTeamTurnIndex ? 'score-card-active' : ''}`}><h3>{team.name}</h3><p>{team.points}</p></div>)}</div>
+          <div className="board">{state.pack.categories.map((cat) => <div key={cat.id} className="cat-col"><h3>{cat.title}</h3>{cat.questions.map((q) => {
+            const used = state.usedQuestionIds.includes(q.id);
+            return <button key={q.id} disabled={used} className={`card ${used ? 'card-used' : ''}`} onClick={() => openQuestion(q.id)}>{used ? 'Used' : q.points}</button>;
+          })}</div>)}</div>
         </section>
       )}
       {screen === 'question' && state && currentQuestion && currentTeam && (
         <section className="panel">
-          <h2>{currentQuestion.category.title} • {currentQuestion.question.points}</h2>
+          <div className="question-header">
+            <p className="turn-pill">Current team: <strong>{currentTeam.name}</strong></p>
+            <h2>{currentQuestion.category.title} • {currentQuestion.question.points} pts</h2>
+          </div>
           <p>{currentQuestion.question.prompt}</p>
-          <div className="timer-row"><strong>Question Timer: {mainTimer}s</strong><button onClick={()=>setMainRunning((v)=>!v)}>{mainRunning?'Pause':'Start'}</button><button onClick={()=>{setMainTimer(60);setMainRunning(false);}}>Reset</button></div>
-          <div className="actions"><button onClick={()=>setShowAnswer(true)}>Show Answer</button><button disabled={currentTeam.lifelinesUsedThisRound.mcq} onClick={()=>{markLifelineUsed('mcq');setShowMcq(true);}}>Show MCQ options</button><button disabled={currentTeam.lifelinesUsedThisRound.hint} onClick={()=>{markLifelineUsed('hint');setShowHint(true);}}>Show Hint</button><button disabled={currentTeam.lifelinesUsedThisRound.twoAnswers} onClick={()=>markLifelineUsed('twoAnswers')}>Mark Two Answers used</button></div>
-          {showMcq && currentQuestion.question.mcqOptions && <ul>{currentQuestion.question.mcqOptions.map((o)=><li key={o}>{o}</li>)}</ul>}
+          <div className={`timer-row timer-box ${mainRunning ? 'timer-running' : ''}`}><strong>Question Timer: {mainTimer}s</strong><button onClick={() => setMainRunning((v) => !v)}>{mainRunning ? 'Pause' : 'Start'}</button><button onClick={() => { setMainTimer(60); setMainRunning(false); }}>Reset</button></div>
+          <div className="lifeline-panel">
+            <p><strong>Lifelines ({currentTeam.name})</strong></p>
+            <div className="actions"><button onClick={() => setShowAnswer(true)}>Show Answer</button><button disabled={currentTeam.lifelinesUsed.mcq} onClick={() => { markLifelineUsed('mcq'); setShowMcq(true); }}>{currentTeam.lifelinesUsed.mcq ? 'MCQ Used' : 'Show MCQ options'}</button><button disabled={currentTeam.lifelinesUsed.hint} onClick={() => { markLifelineUsed('hint'); setShowHint(true); }}>{currentTeam.lifelinesUsed.hint ? 'Hint Used' : 'Show Hint'}</button><button disabled={currentTeam.lifelinesUsed.twoAnswers} onClick={() => markLifelineUsed('twoAnswers')}>{currentTeam.lifelinesUsed.twoAnswers ? 'Two Answers Used' : 'Mark Two Answers used'}</button></div>
+          </div>
+          {showMcq && currentQuestion.question.mcqOptions && <ul>{currentQuestion.question.mcqOptions.map((o) => <li key={o}>{o}</li>)}</ul>}
           {showHint && <p><em>Hint: {currentQuestion.question.hint}</em></p>}
           {showAnswer && <p><strong>Answer:</strong> {currentQuestion.question.answer}</p>}
           <hr />
-          <div className="actions"><button onClick={()=>applyOutcome('correct')}>Correct</button><button onClick={()=>{setState({...state,stealPhase:true});setMainRunning(false);setStealTimer(10);setStealRunning(true);}}>Wrong (Go to Steal)</button><button onClick={()=>applyOutcome('none')}>No one correct</button></div>
-          {state.stealPhase && <div><p>Steal timer: {stealTimer}s</p><div className="actions">{state.teams.filter((t)=>t.id!==currentTeam.id).map((t)=><button key={t.id} onClick={()=>applyOutcome('stolen', t.id)}>Stolen by {t.name}</button>)}</div></div>}
+          <div className="actions outcome-actions"><button onClick={() => applyOutcome('correct')}>✅ Correct</button><button onClick={() => { setState({ ...state, stealPhase: true }); setMainRunning(false); setStealTimer(10); setStealRunning(true); }}>❌ Wrong → Steal Phase</button><button onClick={() => applyOutcome('none')}>⏭️ No one correct</button><button className="cancel-btn" onClick={cancelQuestion}>Back to Board (Cancel Question)</button></div>
+          {state.stealPhase && <div className="steal-box"><p><strong>Steal phase active</strong> • Timer: {stealTimer}s</p><div className="actions">{state.teams.filter((t) => t.id !== currentTeam.id).map((t) => <button key={t.id} onClick={() => applyOutcome('stolen', t.id)}>Stolen by {t.name}</button>)}</div></div>}
         </section>
       )}
     </div>
