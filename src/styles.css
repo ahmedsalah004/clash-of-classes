@@ -42,3 +42,8 @@ input, select { padding: .45rem .6rem; border: 1px solid #cbd5e1; border-radius:
 @media (max-width: 900px) {
   .board { grid-template-columns: repeat(3, minmax(130px, 1fr)); }
 }
+
+.board-header { display: flex; justify-content: space-between; align-items: flex-start; gap: .75rem; }
+.secondary-btn { background: #64748b; }
+.danger-secondary-btn { background: #fff1f2; color: #9f1239; border: 1px solid #fda4af; font-weight: 700; }
+.setup-actions { margin-top: .8rem; }
