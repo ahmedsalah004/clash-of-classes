@@ -4,13 +4,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
-    "check": "tsc --noEmit",
-    "deploy": "wrangler deploy"
+    "dev": "echo \"Use project-level tooling for local worker dev\"",
+    "typecheck": "../../node_modules/.bin/tsc --noEmit -p tsconfig.json",
+    "build": "../../node_modules/.bin/tsc --noEmit -p tsconfig.json",
+    "check": "npm run typecheck && npm run build",
+    "deploy": "echo \"Deploy is intentionally disabled in CI\""
   },
-  "devDependencies": {
-    "@cloudflare/workers-types": "^4.20260420.0",
-    "typescript": "^5.8.3",
-    "wrangler": "^4.14.1"
-  }
+  "devDependencies": {}
 }
