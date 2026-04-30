@@ -176,3 +176,19 @@ input:focus, select:focus { outline: 3px solid rgba(56, 189, 248, .35); border-c
   .board-status-row { align-items: flex-start; }
   .board { grid-template-columns: repeat(3, minmax(130px, 1fr)); }
 }
+
+.team-setup-panel { display: grid; gap: .85rem; padding: clamp(.95rem, 1.8vw, 1.3rem); }
+.team-setup-header { display: grid; gap: .28rem; }
+.team-setup-header h2 { margin: 0; font-size: clamp(1.3rem, 2.8vw, 1.9rem); color: #0b2f69; }
+.team-setup-pack { margin: 0; color: #2b446b; }
+.team-count-field { display: grid; gap: .35rem; max-width: 240px; font-weight: 700; color: #1d365f; }
+.team-count-field select { min-height: 2.55rem; }
+.teams-grid input { min-height: 2.75rem; border-width: 2px; background: #fbfdff; }
+.team-setup-error { margin: 0; }
+
+.actions button { min-height: 2.55rem; }
+.pack-card, .score-card, .cat-col, .question-detail-list, .question-detail-hint, .reveal-panel, .lifeline-panel, .timer-box, .steal-box { border-radius: 14px; }
+
+.question-divider { border: 0; border-top: 1px solid #d4dfef; margin: .15rem 0 0; }
+.steal-box p { margin: 0; }
+.steal-box p + p { margin-top: .25rem; }

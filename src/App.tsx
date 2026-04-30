@@ -363,15 +363,19 @@ function App() {
               </div>
             </div>)}
         <div className="actions"><button className="secondary-btn" onClick={() => setScreen('home')}>Back to Main Menu</button></div></section>}
-      {screen === 'team-setup' && <section className="panel"><h2>Team Setup</h2>
-          {selectedPack && <p>Selected pack: <strong>{selectedPack.title}</strong></p>}
-          {packStartError && <p><strong>Could not start game:</strong> {packStartError}</p>}
-          <label>Number of teams
+      {screen === 'team-setup' && <section className="panel team-setup-panel">
+          <div className="team-setup-header">
+            <p className="pack-selection-kicker">Classroom Setup</p>
+            <h2>Team Setup</h2>
+            {selectedPack && <p className="team-setup-pack">Selected pack: <strong>{selectedPack.title}</strong></p>}
+          </div>
+          {packStartError && <p className="status-box status-warning team-setup-error"><strong>Could not start game:</strong> {packStartError}</p>}
+          <label className="team-count-field">Number of teams
             <select value={teamCount} onChange={(e) => { const count = Number(e.target.value); setTeamCount(count); const nextTeams = createTeams(count); setTeams((prev) => nextTeams.map((team, i) => ({ ...team, name: prev[i]?.name ?? team.name }))); }}>
               {[2, 3, 4, 5, 6].map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           </label>
-          <div className="teams-grid">{teams.map((team, i) => <input key={team.id} value={team.name} onChange={(e) => setTeams((prev) => prev.map((t) => t.id === team.id ? { ...t, name: e.target.value } : t))} style={{ borderColor: TEAM_COLORS[i] }} />)}</div>
+          <div className="teams-grid">{teams.map((team, i) => <input key={team.id} aria-label={`Team ${i + 1} name`} value={team.name} onChange={(e) => setTeams((prev) => prev.map((t) => t.id === team.id ? { ...t, name: e.target.value } : t))} style={{ borderColor: TEAM_COLORS[i] }} />)}</div>
           <div className="actions setup-actions"><button disabled={startingGame} onClick={startGame}>{startingGame ? 'Loading Pack...' : 'Start Game'}</button><button className="secondary-btn" onClick={returnToPackSelection}>Back to Pack Selection</button></div></section>}
       {screen === 'board' && state && (
         <section className="panel board-panel">
@@ -443,7 +447,7 @@ function App() {
 
           {state.stealPhase && <div className="steal-box"><p><strong>{otherTeamLabel}</strong></p><p className="other-team-timer">Timer: {otherTeamTimer}s</p><p>Teams that can answer: {canAnswerTeams.map((team) => team.name).join(', ')}</p></div>}
 
-          <hr /><div className="actions outcome-actions"><button className="outcome-correct" onClick={handleCorrect}>✅ Correct</button><button className="outcome-incorrect" onClick={handleIncorrect}>❌ Incorrect</button>{canAnswerTeams.map((team) => <button key={team.id} className="outcome-neutral" onClick={() => handleAnsweredByTeam(team.id)}>Answered by {team.name}</button>)}<button className="cancel-btn outcome-back" onClick={cancelQuestion}>Back to Board (Cancel Question)</button></div></section>}
+          <hr className="question-divider" /><div className="actions outcome-actions"><button className="outcome-correct" onClick={handleCorrect}>✅ Correct</button><button className="outcome-incorrect" onClick={handleIncorrect}>❌ Incorrect</button>{canAnswerTeams.map((team) => <button key={team.id} className="outcome-neutral" onClick={() => handleAnsweredByTeam(team.id)}>Answered by {team.name}</button>)}<button className="cancel-btn outcome-back" onClick={cancelQuestion}>Back to Board (Cancel Question)</button></div></section>}
     </div>;
 }
 
