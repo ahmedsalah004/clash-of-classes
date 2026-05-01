@@ -379,6 +379,26 @@ function App() {
               <a className="feedback-link-card" href={questionIssueLink}>Report a question issue</a>
               <a className="feedback-link-card" href={curriculumPackLink}>Request a curriculum pack</a>
             </div>
+            <section className="teacher-testing-checklist" aria-label="Teacher testing checklist">
+              <h3>Teacher Testing Checklist (MVP)</h3>
+              <p className="teacher-testing-support">Use this quick flow in a live classroom test and then share feedback.</p>
+              <ol>
+                <li>Choose a curriculum pack.</li>
+                <li>Set 2–4 teams.</li>
+                <li>Open 2–3 questions.</li>
+                <li>Try <strong>Hint</strong>, <strong>MCQ</strong>, and <strong>Give two answers</strong>.</li>
+                <li>Try <strong>Correct</strong>, <strong>Incorrect</strong>, and <strong>Answered by Team X</strong>.</li>
+                <li>Try <strong>Report this question</strong>.</li>
+              </ol>
+              <h4>Suggested feedback prompts</h4>
+              <ul>
+                <li>Was the flow easy to understand?</li>
+                <li>Was the question readable on a smartboard?</li>
+                <li>Was the timer/audio helpful or annoying?</li>
+                <li>Were the questions suitable for Year 5 / Grade 5?</li>
+                <li>What pack would you want next?</li>
+              </ul>
+            </section>
           </section>
         </div>}
       {screen === 'home' && <section className="panel home-panel">
