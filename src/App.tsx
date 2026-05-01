@@ -63,7 +63,9 @@ function createTeams(count: number): Team[] {
 }
 
 function App() {
+  const FEEDBACK_EMAIL = 'tasleyaonline@gmail.com';
   const [screen, setScreen] = useState<Screen>('home');
+  const [showFeedbackPanel, setShowFeedbackPanel] = useState(false);
   const [selectedPack, setSelectedPack] = useState<Pack | null>(null);
   const [availablePacks, setAvailablePacks] = useState<Pack[]>([]);
   const [packsLoading, setPacksLoading] = useState(false);
@@ -194,6 +196,30 @@ function App() {
     if (!state || !currentTeam) return [];
     return state.teams.filter((team) => team.id !== currentTeam.id);
   }, [state, currentTeam]);
+
+  function buildMailtoLink(subject: string, body?: string) {
+    const params = new URLSearchParams({ subject });
+    if (body) params.set('body', body);
+    return `mailto:${FEEDBACK_EMAIL}?${params.toString()}`;
+  }
+
+  const generalFeedbackLink = useMemo(
+    () => buildMailtoLink('Feedback on Classroom Mode', 'Hi team,%0D%0A%0D%0ASharing classroom feedback:%0D%0A'),
+    [],
+  );
+  const curriculumPackLink = useMemo(
+    () => buildMailtoLink('Curriculum pack request', 'Hi team,%0D%0A%0D%0AI would like to request a curriculum pack for:%0D%0A'),
+    [],
+  );
+  const questionIssueLink = useMemo(() => {
+    const lines = ['Hi team,', '', 'I want to report a question issue.'];
+    if (screen === 'question' && state && currentQuestion) {
+      lines.push('', `Pack title: ${state.pack.title}`, `Category: ${currentQuestion.category.title}`, `Points: ${currentQuestion.question.points}`, `Question text: ${currentQuestion.question.prompt}`, `Answer: ${currentQuestion.question.answer}`);
+    } else {
+      lines.push('', '(No active question context included)');
+    }
+    return buildMailtoLink('Question issue report', lines.join('\n'));
+  }, [screen, state, currentQuestion]);
 
 
   function resetGameSession() {
@@ -340,7 +366,21 @@ function App() {
     ? `Chance for ${canAnswerTeams[0].name} to answer`
     : 'Chance for other team(s) to answer';
 
-  return <div className="app-shell"><header><h1>Clash of Classes • Classroom Mode</h1></header>
+  return <div className="app-shell"><header className="app-header"><h1>Clash of Classes • Classroom Mode</h1><button className="secondary-btn feedback-open-btn" onClick={() => setShowFeedbackPanel(true)}>Send Feedback</button></header>
+      {showFeedbackPanel && <div className="feedback-modal-backdrop" role="presentation" onClick={() => setShowFeedbackPanel(false)}>
+          <section className="feedback-modal panel" role="dialog" aria-modal="true" aria-label="Send feedback" onClick={(event) => event.stopPropagation()}>
+            <div className="feedback-modal-header">
+              <h2>Send Feedback</h2>
+              <button className="secondary-btn" onClick={() => setShowFeedbackPanel(false)}>Close</button>
+            </div>
+            <p className="feedback-modal-support">Choose an option below to open your email app with a pre-filled subject and helpful details.</p>
+            <div className="feedback-options">
+              <a className="feedback-link-card" href={generalFeedbackLink}>General feedback</a>
+              <a className="feedback-link-card" href={questionIssueLink}>Report a question issue</a>
+              <a className="feedback-link-card" href={curriculumPackLink}>Request a curriculum pack</a>
+            </div>
+          </section>
+        </div>}
       {screen === 'home' && <section className="panel home-panel">
           <div className="home-hero">
             <p className="home-kicker">Classroom Game Host</p>
@@ -464,7 +504,7 @@ function App() {
 
           {state.stealPhase && <div className="steal-box"><p><strong>{otherTeamLabel}</strong></p><p className="other-team-timer">Timer: {otherTeamTimer}s</p><p>Teams that can answer: {canAnswerTeams.map((team) => team.name).join(', ')}</p></div>}
 
-          <hr className="question-divider" /><div className="actions outcome-actions"><button className="outcome-correct" onClick={handleCorrect}>✅ Correct</button><button className="outcome-incorrect" onClick={handleIncorrect}>❌ Incorrect</button>{canAnswerTeams.map((team) => <button key={team.id} className="outcome-neutral" onClick={() => handleAnsweredByTeam(team.id)}>Answered by {team.name}</button>)}<button className="cancel-btn outcome-back" onClick={cancelQuestion}>Back to Board (Cancel Question)</button></div></section>}
+          <hr className="question-divider" /><div className="actions outcome-actions"><button className="outcome-correct" onClick={handleCorrect}>✅ Correct</button><button className="outcome-incorrect" onClick={handleIncorrect}>❌ Incorrect</button>{canAnswerTeams.map((team) => <button key={team.id} className="outcome-neutral" onClick={() => handleAnsweredByTeam(team.id)}>Answered by {team.name}</button>)}<a className="report-issue-inline" href={questionIssueLink}>Report this question</a><button className="cancel-btn outcome-back" onClick={cancelQuestion}>Back to Board (Cancel Question)</button></div></section>}
     </div>;
 }
 
