@@ -232,3 +232,31 @@ input:focus, select:focus { outline: 3px solid rgba(56, 189, 248, .35); border-c
 .question-divider { border: 0; border-top: 1px solid #d4dfef; margin: .15rem 0 0; }
 .steal-box p { margin: 0; }
 .steal-box p + p { margin-top: .25rem; }
+
+.teacher-testing-checklist {
+  border: 1px solid #c7d9f5;
+  border-radius: 13px;
+  padding: .8rem .9rem;
+  background: #f7fbff;
+}
+.teacher-testing-checklist h3,
+.teacher-testing-checklist h4 {
+  margin: 0;
+  color: #16325d;
+}
+.teacher-testing-support {
+  margin: .3rem 0 0;
+  color: #2b446b;
+}
+.teacher-testing-checklist ol,
+.teacher-testing-checklist ul {
+  margin: .55rem 0 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: .3rem;
+  color: #203f6d;
+}
+.teacher-testing-checklist h4 {
+  margin-top: .7rem;
+  font-size: .95rem;
+}
