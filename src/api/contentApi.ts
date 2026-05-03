@@ -19,6 +19,8 @@ interface WorkerPackSummary {
   qualification?: unknown;
   syllabus_code?: unknown;
   display_group?: unknown;
+  subject?: unknown;
+  subject_label?: unknown;
 }
 interface WorkerQuestion { id?: unknown; category_id?: unknown; prompt?: unknown; question_text?: unknown; question?: unknown; answer?: unknown; hint?: unknown; points?: unknown; card_order?: unknown; mcq_options?: unknown; two_answers_options?: unknown; }
 interface WorkerCategory { id?: unknown; name?: unknown; questions?: unknown; }
@@ -70,13 +72,15 @@ function mapPackSummary(workerPack: WorkerPackSummary): Pack {
   const id = toNonEmptyString(workerPack.id, 'unknown-pack');
   const title = toNonEmptyString(workerPack.name, id);
   const curriculum = toNonEmptyString(workerPack.curriculum_id, 'unknown-curriculum').toLowerCase();
+  const explicitSubject = toOptionalString(workerPack.subject) ?? toOptionalString(workerPack.subject_label);
   const isCambridge = curriculum.includes('cambridge');
   const isAmerican = curriculum.includes('american') || curriculum.includes('us') || curriculum.includes('ngss');
   const isStage5 = curriculum.includes('stage-5') || curriculum.includes('stage5') || curriculum.includes('s5');
   const isGrade5 = curriculum.includes('grade-5') || curriculum.includes('grade5') || curriculum.includes('g5');
-  const isScience = curriculum.includes('science');
-  const isMath = curriculum.includes('math');
-  const isEnglish = curriculum.includes('english') || curriculum.includes('ela') || curriculum.includes('language-arts');
+  const subjectSource = `${explicitSubject ?? ''} ${title}`.toLowerCase();
+  const isScience = /\bscience\b/.test(subjectSource);
+  const isMath = /\bmath(s)?\b/.test(subjectSource);
+  const isEnglish = /\benglish\b/.test(subjectSource) || /\bela\b/.test(subjectSource) || /\blanguage[\s-]?arts\b/.test(subjectSource);
 
   const stageLabel = isCambridge
     ? `Cambridge ${isStage5 ? 'Stage 5' : 'Primary'}`
@@ -90,7 +94,7 @@ function mapPackSummary(workerPack: WorkerPackSummary): Pack {
       ? (isCambridge ? 'Maths' : 'Math')
       : isEnglish
         ? (isCambridge ? 'English' : 'ELA')
-        : 'Curriculum';
+        : explicitSubject ?? 'Curriculum';
 
   return {
     id,
