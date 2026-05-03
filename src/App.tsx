@@ -4,7 +4,7 @@ import { sampleMatterPack } from './data/sampleMatterPack';
 import type { GameState, LifelineKey, Pack, Team } from './types/game';
 
 type Screen = 'home' | 'pack-selection' | 'team-setup' | 'board' | 'question';
-type PackSelectionStep = 'level' | 'subject' | 'pack';
+type PackSelectionStep = 'curriculum' | 'level' | 'subject' | 'pack';
 
 const TEAM_COLORS = ['#1d4ed8', '#047857', '#b45309', '#7c3aed', '#be123c', '#0f766e'];
 const RECOMMENDED_PACK_ID = 'y5s-u3-matter';
@@ -18,58 +18,54 @@ function normalizeText(value?: string | null): string {
   return (value ?? '').trim().toLowerCase();
 }
 
-function getPackLevel(pack: Pack): string {
-  const combined = `${pack.stageLabel} ${pack.displayGroup ?? ''}`.toLowerCase();
-  if (combined.includes('stage 5') || combined.includes('grade 5') || combined.includes('year 5')) return 'stage5-grade5';
+function normalizeCurriculum(pack: Pack): 'cambridge-primary' | 'american' | 'other' {
+  const text = normalizeText(`${pack.displayGroup ?? ''} ${pack.stageLabel} ${pack.curriculumSystem ?? ''} ${pack.schoolTrack ?? ''}`);
+  if (text.includes('cambridge') || text.includes('british') || text.includes('ig')) return 'cambridge-primary';
+  if (text.includes('american') || text.includes('us')) return 'american';
   return 'other';
 }
 
-function getPackSubject(pack: Pack): string {
-  const subject = normalizeText(pack.subjectLabel);
-  if (subject.includes('math')) return 'math';
-  if (subject.includes('english') || subject.includes('ela') || subject.includes('language arts')) return 'english';
-  if (subject.includes('science')) return 'science';
-
-  const title = normalizeText(pack.title);
-  if (title.includes('math')) return 'math';
-  if (title.includes('english') || title.includes('ela')) return 'english';
-  if (title.includes('science')) return 'science';
+function normalizeLevel(pack: Pack): 'cambridge-stage-5' | 'american-grade-5' | 'other' {
+  const curriculum = normalizeCurriculum(pack);
+  const text = normalizeText(`${pack.stageLabel} ${pack.levelLabel ?? ''} ${pack.yearEquivalent ?? ''} ${pack.gradeEquivalent ?? ''} ${pack.title}`);
+  if (curriculum === 'cambridge-primary' && (text.includes('stage 5') || text.includes('year 5'))) return 'cambridge-stage-5';
+  if (curriculum === 'american' && (text.includes('grade 5') || text.includes('year 5'))) return 'american-grade-5';
   return 'other';
 }
 
-function getPackCurriculumGroup(pack: Pack): string {
-  return pack.displayGroup?.trim() || `${pack.stageLabel}`.trim() || 'Other Packs';
+function normalizeSubject(pack: Pack): 'science' | 'math' | 'english' | 'other' {
+  const text = normalizeText(`${pack.subjectLabel} ${pack.title}`);
+  if (text.includes('science')) return 'science';
+  if (text.includes('math')) return 'math';
+  if (text.includes('english') || text.includes('ela') || text.includes('language arts')) return 'english';
+  return 'other';
 }
 
-function getDisplaySubject(subject: string): string {
-  if (subject === 'english') return 'English / ELA';
-  if (subject === 'math') return 'Maths / Math';
+function getDisplaySubject(subject: string, curriculum: string | null): string {
   if (subject === 'science') return 'Science';
+  if (subject === 'math') return curriculum === 'cambridge-primary' ? 'Maths' : 'Math';
+  if (subject === 'english') return curriculum === 'cambridge-primary' ? 'English' : 'ELA';
   return 'Other';
 }
 
-function sortAndGroupPacks(packs: Pack[]): GroupedPacks {
+function getUnitNumber(pack: Pack): number {
+  const numericSort = Number((pack as Pack & { sortOrder?: number }).sortOrder);
+  if (Number.isFinite(numericSort) && numericSort > 0) return numericSort;
+  const fromTitle = pack.title.match(/\bunit\s*(\d+)\b/i);
+  return fromTitle ? Number(fromTitle[1]) : Number.MAX_SAFE_INTEGER;
+}
 
+function sortAndGroupPacks(packs: Pack[]): GroupedPacks {
   const sorted = [...packs].sort((a, b) => {
+    const aUnit = getUnitNumber(a);
+    const bUnit = getUnitNumber(b);
+    if (aUnit !== bUnit) return aUnit - bUnit;
     if (a.id === RECOMMENDED_PACK_ID) return -1;
     if (b.id === RECOMMENDED_PACK_ID) return 1;
-
-    const aGroup = getPackCurriculumGroup(a);
-    const bGroup = getPackCurriculumGroup(b);
-    if (aGroup !== bGroup) {
-      return aGroup.localeCompare(bGroup);
-    }
-
-    return a.title.localeCompare(b.title);
+    return a.title.localeCompare(b.title, undefined, { numeric: true });
   });
 
-  const grouped = new Map<string, Pack[]>();
-  for (const pack of sorted) {
-    const group = getPackCurriculumGroup(pack);
-    grouped.set(group, [...(grouped.get(group) ?? []), pack]);
-  }
-
-  return [...grouped.entries()].map(([group, groupedPacks]) => ({ group, packs: groupedPacks }));
+  return [{ group: 'Available Packs', packs: sorted }];
 }
 
 function createTeams(count: number): Team[] {
@@ -90,7 +86,8 @@ function App() {
   const [packsLoading, setPacksLoading] = useState(false);
   const [packsError, setPacksError] = useState<string | null>(null);
   const [packStartError, setPackStartError] = useState<string | null>(null);
-  const [packSelectionStep, setPackSelectionStep] = useState<PackSelectionStep>('level');
+  const [packSelectionStep, setPackSelectionStep] = useState<PackSelectionStep>('curriculum');
+  const [selectedCurriculum, setSelectedCurriculum] = useState<string | null>(null);
   const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
   const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [startingGame, setStartingGame] = useState(false);
@@ -201,19 +198,31 @@ function App() {
   }, []);
 
   const currentTeam = useMemo(() => (!state ? null : state.teams[state.currentTeamTurnIndex] ?? null), [state]);
-  const levelOptions = useMemo(() => {
-    const levels = new Set(availablePacks.map((pack) => getPackLevel(pack)));
-    return [...levels].filter((level) => level !== 'other').map((level) => ({ id: level, label: 'Stage 5 / Grade 5', subtitle: 'Cambridge Stage 5 and American Grade 5 packs' }));
+  const curriculumOptions = useMemo(() => {
+    const keys = new Set(availablePacks.map((pack) => normalizeCurriculum(pack)).filter((key) => key !== 'other'));
+    return [...keys].map((id) => ({
+      id,
+      label: id === 'cambridge-primary' ? 'British / IG / Cambridge Primary' : 'American',
+      subtitle: id === 'cambridge-primary' ? 'Cambridge curriculum packs' : 'US curriculum packs',
+    }));
   }, [availablePacks]);
+  const levelOptions = useMemo(() => {
+    if (!selectedCurriculum) return [];
+    const levels = new Set(availablePacks.filter((pack) => normalizeCurriculum(pack) === selectedCurriculum).map((pack) => normalizeLevel(pack)).filter((level) => level !== 'other'));
+    return [...levels].map((id) => ({ id, label: id === 'cambridge-stage-5' ? 'Cambridge Stage 5' : 'American Grade 5' }));
+  }, [availablePacks, selectedCurriculum]);
   const subjectOptions = useMemo(() => {
-    if (!selectedLevel) return [];
-    const subjects = new Set(availablePacks.filter((pack) => getPackLevel(pack) === selectedLevel).map((pack) => getPackSubject(pack)));
-    return [...subjects].filter((subject) => subject !== 'other');
-  }, [availablePacks, selectedLevel]);
+    if (!selectedCurriculum || !selectedLevel) return [];
+    const subjects = new Set(availablePacks
+      .filter((pack) => normalizeCurriculum(pack) === selectedCurriculum && normalizeLevel(pack) === selectedLevel)
+      .map((pack) => normalizeSubject(pack))
+      .filter((subject) => subject !== 'other'));
+    return [...subjects];
+  }, [availablePacks, selectedCurriculum, selectedLevel]);
   const visiblePacks = useMemo(() => {
-    if (!selectedLevel || !selectedSubject) return [];
-    return availablePacks.filter((pack) => getPackLevel(pack) === selectedLevel && getPackSubject(pack) === selectedSubject);
-  }, [availablePacks, selectedLevel, selectedSubject]);
+    if (!selectedCurriculum || !selectedLevel || !selectedSubject) return [];
+    return availablePacks.filter((pack) => normalizeCurriculum(pack) === selectedCurriculum && normalizeLevel(pack) === selectedLevel && normalizeSubject(pack) === selectedSubject);
+  }, [availablePacks, selectedCurriculum, selectedLevel, selectedSubject]);
   const groupedPacks = useMemo(() => sortAndGroupPacks(visiblePacks), [visiblePacks]);
   const currentQuestion = useMemo(() => {
     if (!state?.currentQuestionId || !state.pack) return null;
@@ -446,28 +455,34 @@ function App() {
               <li>Built for live hosting with clear score tracking</li>
               <li>Great for lesson warm-ups, review, and exit tickets</li>
             </ul>
-            <div className="home-cta-row"><button className="home-primary-cta" onClick={() => { setSelectedLevel(null); setSelectedSubject(null); setPackSelectionStep('level'); setScreen('pack-selection'); }}>Start Classroom Mode</button></div>
+            <div className="home-cta-row"><button className="home-primary-cta" onClick={() => { setSelectedCurriculum(null); setSelectedLevel(null); setSelectedSubject(null); setPackSelectionStep('curriculum'); setScreen('pack-selection'); }}>Start Classroom Mode</button></div>
           </div>
         </section>}
       {screen === 'pack-selection' && <section className="panel pack-selection-panel">
           <div className="pack-selection-header">
             <p className="pack-selection-kicker">Classroom Setup</p>
-            <h2>{packSelectionStep === 'level' ? 'Choose Year Group / Level' : packSelectionStep === 'subject' ? 'Choose a Subject' : 'Choose a Pack'}</h2>
-            <p className="pack-selection-support">{packSelectionStep === 'level' ? 'Start by choosing the learning level for your class.' : packSelectionStep === 'subject' ? 'Select a subject to narrow to relevant classroom packs.' : 'Choose a curriculum pack to launch Team Setup.'}</p>
+            <h2>{packSelectionStep === 'curriculum' ? 'Choose Curriculum' : packSelectionStep === 'level' ? 'Choose Year / Level' : packSelectionStep === 'subject' ? 'Choose a Subject' : 'Choose a Pack'}</h2>
+            <p className="pack-selection-support">{packSelectionStep === 'curriculum' ? 'Start by choosing your curriculum.' : packSelectionStep === 'level' ? 'Choose the year/level for your curriculum.' : packSelectionStep === 'subject' ? 'Select a subject to narrow to relevant classroom packs.' : 'Choose a curriculum pack to launch Team Setup.'}</p>
           </div>
           {packsLoading && <div className="status-box status-loading"><p className="status-title">Preparing classroom packs…</p><p>Loading available packs from the content service.</p></div>}
           {packsError && <div className="status-box status-warning"><p className="status-title">API unavailable</p><p>{packsError}</p><p>Using local classroom fallback pack.</p></div>}
+          {!packsLoading && packSelectionStep === 'curriculum' && <div className="selection-grid">
+              {curriculumOptions.map((curriculum) => <button key={curriculum.id} className="pack-card" onClick={() => { setSelectedCurriculum(curriculum.id); setSelectedLevel(null); setSelectedSubject(null); setPackSelectionStep('level'); }}>
+                  <div className="pack-card-top"><strong className="pack-title">{curriculum.label}</strong></div>
+                  <span className="pack-card-meta">{curriculum.subtitle}</span>
+                </button>)}
+            </div>}
           {!packsLoading && packSelectionStep === 'level' && <div className="selection-grid">
               {levelOptions.map((level) => <button key={level.id} className="pack-card" onClick={() => { setSelectedLevel(level.id); setSelectedSubject(null); setPackSelectionStep('subject'); }}>
                   <div className="pack-card-top"><strong className="pack-title">{level.label}</strong></div>
-                  <span className="pack-card-meta">{level.subtitle}</span>
+                  <span className="pack-card-meta">{selectedCurriculum === 'cambridge-primary' ? 'British / IG / Cambridge Primary' : 'American'}</span>
                 </button>)}
             </div>}
           {!packsLoading && packSelectionStep === 'subject' && <>
               <div className="selection-grid">
                 {subjectOptions.map((subject) => <button key={subject} className="pack-card" onClick={() => { setSelectedSubject(subject); setPackSelectionStep('pack'); }}>
-                    <div className="pack-card-top"><strong className="pack-title">{getDisplaySubject(subject)}</strong></div>
-                    <span className="pack-card-meta">{selectedLevel === 'stage5-grade5' ? 'Stage 5 / Grade 5 packs' : 'Matching packs'}</span>
+                    <div className="pack-card-top"><strong className="pack-title">{getDisplaySubject(subject, selectedCurriculum)}</strong></div>
+                    <span className="pack-card-meta">{levelOptions.find((level) => level.id === selectedLevel)?.label ?? 'Matching packs'}</span>
                   </button>)}
               </div>
             </>}
@@ -483,12 +498,13 @@ function App() {
                       {recommended && <span className="recommended-badge">Recommended</span>}
                     </div>
                     <span className="pack-card-meta">{pack.stageLabel}</span>
-                    <span className="pack-card-meta">{getDisplaySubject(getPackSubject(pack))}</span>
+                    <span className="pack-card-meta">{getDisplaySubject(normalizeSubject(pack), selectedCurriculum)}</span>
                   </button>;
                 })}
               </div>
             </div>)}
         <div className="actions">
+          {packSelectionStep === 'level' && <button className="secondary-btn" onClick={() => { setSelectedCurriculum(null); setPackSelectionStep('curriculum'); }}>Back to Curriculum</button>}
           {packSelectionStep === 'subject' && <button className="secondary-btn" onClick={() => { setSelectedSubject(null); setPackSelectionStep('level'); }}>Back to Year / Level</button>}
           {packSelectionStep === 'pack' && <button className="secondary-btn" onClick={() => { setSelectedPack(null); setPackSelectionStep('subject'); }}>Back to Subject</button>}
           <button className="secondary-btn" onClick={() => setScreen('home')}>Back to Main Menu</button>

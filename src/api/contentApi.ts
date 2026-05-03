@@ -75,14 +75,22 @@ function mapPackSummary(workerPack: WorkerPackSummary): Pack {
   const isStage5 = curriculum.includes('stage-5') || curriculum.includes('stage5') || curriculum.includes('s5');
   const isGrade5 = curriculum.includes('grade-5') || curriculum.includes('grade5') || curriculum.includes('g5');
   const isScience = curriculum.includes('science');
+  const isMath = curriculum.includes('math');
+  const isEnglish = curriculum.includes('english') || curriculum.includes('ela') || curriculum.includes('language-arts');
 
   const stageLabel = isCambridge
-    ? `Cambridge ${isStage5 ? 'Stage 5' : 'Science'}`
+    ? `Cambridge ${isStage5 ? 'Stage 5' : 'Primary'}`
     : isAmerican
       ? `American ${isGrade5 ? 'Grade 5' : 'Curriculum'}`
       : 'Classroom Pack';
 
-  const subjectLabel = isScience ? 'Science' : 'Curriculum';
+  const subjectLabel = isScience
+    ? 'Science'
+    : isMath
+      ? (isCambridge ? 'Maths' : 'Math')
+      : isEnglish
+        ? (isCambridge ? 'English' : 'ELA')
+        : 'Curriculum';
 
   return {
     id,
