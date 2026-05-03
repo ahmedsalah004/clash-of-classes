@@ -37,6 +37,7 @@ interface Pack {
   qualification: string;
   syllabus_code: string;
   display_group: string;
+  subject: string;
   [key: string]: string | number | boolean;
 }
 
@@ -285,7 +286,19 @@ function mapPack(curriculumId: CurriculumId, record: Record<string, string | num
       ]
         .filter(Boolean)
         .join(" / "),
+    subject: findByKnownKeys(record, ["subject", "subject_label", "learning_area", "strand"]),
   };
+}
+
+function buildSubjectIndex(rows: Array<Record<string, string | number | boolean>>): Map<string, string> {
+  const index = new Map<string, string>();
+  for (const row of rows) {
+    const packId = findByKnownKeys(row, ["pack_id", "pack", "pack_slug", "id"]);
+    const subject = findByKnownKeys(row, ["subject", "subject_label", "learning_area", "strand"]);
+    if (!packId || !subject) continue;
+    if (!index.has(packId)) index.set(packId, subject);
+  }
+  return index;
 }
 
 function mapCategory(record: Record<string, string | number | boolean>): Category {
@@ -315,9 +328,23 @@ function mapQuestion(record: Record<string, string | number | boolean>): Questio
 
 async function getAllPacks(env: Env): Promise<Pack[]> {
   const tasks = CURRICULA.map(async (curriculum) => {
-    const url = env[curriculum.packsUrlVar] as string;
-    const rows = await fetchCsvRows(url);
-    return rows.map((row) => mapPack(curriculum.id, row)).filter((pack) => pack.active);
+    const [packRows, questionRows] = await Promise.all([
+      fetchCsvRows(env[curriculum.packsUrlVar] as string),
+      fetchCsvRows(env[curriculum.questionBankUrlVar] as string),
+    ]);
+    const subjectByPackId = buildSubjectIndex(questionRows);
+    return packRows
+      .map((row) => {
+        const pack = mapPack(curriculum.id, row);
+        const subject = subjectByPackId.get(pack.id);
+        if (subject) {
+          pack.subject = subject;
+        } else if (!pack.subject) {
+          console.warn(`[content-api] Missing subject for pack_id=${pack.id} (${pack.name})`);
+        }
+        return pack;
+      })
+      .filter((pack) => pack.active);
   });
 
   const nested = await Promise.all(tasks);
