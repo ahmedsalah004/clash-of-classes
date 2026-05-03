@@ -30,6 +30,7 @@
 .pack-group { margin-top: .2rem; }
 .pack-group-heading { margin: 0 0 .55rem; font-size: .83rem; letter-spacing: .09em; text-transform: uppercase; color: #294875; font-weight: 800; }
 .pack-grid { display: grid; gap: .7rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.selection-grid { display: grid; gap: .7rem; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .pack-card { display: grid; gap: .42rem; margin-top: 0; width: 100%; min-height: 8.8rem; text-align: left; border: 1px solid #b8cdee; border-radius: 14px; background: linear-gradient(180deg, #fafdff 0%, #eef4ff 100%); color: #16325d; box-shadow: inset 0 1px 0 rgba(255,255,255,.9), 0 7px 14px rgba(20, 61, 125, .1); }
 .pack-card:hover:not(:disabled) { border-color: #7da6e6; }
 .pack-card:focus-visible { outline: 3px solid rgba(37, 99, 235, .35); outline-offset: 3px; border-color: #2563eb; }

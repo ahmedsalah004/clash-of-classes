@@ -4,6 +4,7 @@ import { sampleMatterPack } from './data/sampleMatterPack';
 import type { GameState, LifelineKey, Pack, Team } from './types/game';
 
 type Screen = 'home' | 'pack-selection' | 'team-setup' | 'board' | 'question';
+type PackSelectionStep = 'level' | 'subject' | 'pack';
 
 const TEAM_COLORS = ['#1d4ed8', '#047857', '#b45309', '#7c3aed', '#be123c', '#0f766e'];
 const RECOMMENDED_PACK_ID = 'y5s-u3-matter';
@@ -13,31 +14,49 @@ const MAIN_TIMER_WARNING_SECONDS = 10;
 
 type GroupedPacks = { group: string; packs: Pack[] }[];
 
+function normalizeText(value?: string | null): string {
+  return (value ?? '').trim().toLowerCase();
+}
+
+function getPackLevel(pack: Pack): string {
+  const combined = `${pack.stageLabel} ${pack.displayGroup ?? ''}`.toLowerCase();
+  if (combined.includes('stage 5') || combined.includes('grade 5') || combined.includes('year 5')) return 'stage5-grade5';
+  return 'other';
+}
+
+function getPackSubject(pack: Pack): string {
+  const subject = normalizeText(pack.subjectLabel);
+  if (subject.includes('math')) return 'math';
+  if (subject.includes('english') || subject.includes('ela') || subject.includes('language arts')) return 'english';
+  if (subject.includes('science')) return 'science';
+
+  const title = normalizeText(pack.title);
+  if (title.includes('math')) return 'math';
+  if (title.includes('english') || title.includes('ela')) return 'english';
+  if (title.includes('science')) return 'science';
+  return 'other';
+}
+
+function getPackCurriculumGroup(pack: Pack): string {
+  return pack.displayGroup?.trim() || `${pack.stageLabel}`.trim() || 'Other Packs';
+}
+
+function getDisplaySubject(subject: string): string {
+  if (subject === 'english') return 'English / ELA';
+  if (subject === 'math') return 'Maths / Math';
+  if (subject === 'science') return 'Science';
+  return 'Other';
+}
+
 function sortAndGroupPacks(packs: Pack[]): GroupedPacks {
-  const fallbackGroupOrder = ['Cambridge Stage 5 Science', 'American Grade 5 Science', 'Other Packs'];
-
-  const getFallbackGroup = (pack: Pack): string => {
-    const stage = pack.stageLabel.toLowerCase();
-    const subject = pack.subjectLabel.toLowerCase();
-    if (stage.includes('cambridge') && stage.includes('stage 5') && subject.includes('science')) return 'Cambridge Stage 5 Science';
-    if (stage.includes('american') && stage.includes('grade 5') && subject.includes('science')) return 'American Grade 5 Science';
-    return 'Other Packs';
-  };
-
-  const getDisplayGroup = (pack: Pack): string => pack.displayGroup?.trim() || getFallbackGroup(pack);
-
-  const fallbackRank = new Map(fallbackGroupOrder.map((group, index) => [group, index]));
 
   const sorted = [...packs].sort((a, b) => {
     if (a.id === RECOMMENDED_PACK_ID) return -1;
     if (b.id === RECOMMENDED_PACK_ID) return 1;
 
-    const aGroup = getDisplayGroup(a);
-    const bGroup = getDisplayGroup(b);
+    const aGroup = getPackCurriculumGroup(a);
+    const bGroup = getPackCurriculumGroup(b);
     if (aGroup !== bGroup) {
-      const aRank = fallbackRank.get(aGroup);
-      const bRank = fallbackRank.get(bGroup);
-      if (aRank !== undefined || bRank !== undefined) return (aRank ?? Number.MAX_SAFE_INTEGER) - (bRank ?? Number.MAX_SAFE_INTEGER);
       return aGroup.localeCompare(bGroup);
     }
 
@@ -46,7 +65,7 @@ function sortAndGroupPacks(packs: Pack[]): GroupedPacks {
 
   const grouped = new Map<string, Pack[]>();
   for (const pack of sorted) {
-    const group = getDisplayGroup(pack);
+    const group = getPackCurriculumGroup(pack);
     grouped.set(group, [...(grouped.get(group) ?? []), pack]);
   }
 
@@ -71,6 +90,9 @@ function App() {
   const [packsLoading, setPacksLoading] = useState(false);
   const [packsError, setPacksError] = useState<string | null>(null);
   const [packStartError, setPackStartError] = useState<string | null>(null);
+  const [packSelectionStep, setPackSelectionStep] = useState<PackSelectionStep>('level');
+  const [selectedLevel, setSelectedLevel] = useState<string | null>(null);
+  const [selectedSubject, setSelectedSubject] = useState<string | null>(null);
   const [startingGame, setStartingGame] = useState(false);
   const [teamCount, setTeamCount] = useState(2);
   const [teams, setTeams] = useState<Team[]>(createTeams(2));
@@ -179,7 +201,20 @@ function App() {
   }, []);
 
   const currentTeam = useMemo(() => (!state ? null : state.teams[state.currentTeamTurnIndex] ?? null), [state]);
-  const groupedPacks = useMemo(() => sortAndGroupPacks(availablePacks), [availablePacks]);
+  const levelOptions = useMemo(() => {
+    const levels = new Set(availablePacks.map((pack) => getPackLevel(pack)));
+    return [...levels].filter((level) => level !== 'other').map((level) => ({ id: level, label: 'Stage 5 / Grade 5', subtitle: 'Cambridge Stage 5 and American Grade 5 packs' }));
+  }, [availablePacks]);
+  const subjectOptions = useMemo(() => {
+    if (!selectedLevel) return [];
+    const subjects = new Set(availablePacks.filter((pack) => getPackLevel(pack) === selectedLevel).map((pack) => getPackSubject(pack)));
+    return [...subjects].filter((subject) => subject !== 'other');
+  }, [availablePacks, selectedLevel]);
+  const visiblePacks = useMemo(() => {
+    if (!selectedLevel || !selectedSubject) return [];
+    return availablePacks.filter((pack) => getPackLevel(pack) === selectedLevel && getPackSubject(pack) === selectedSubject);
+  }, [availablePacks, selectedLevel, selectedSubject]);
+  const groupedPacks = useMemo(() => sortAndGroupPacks(visiblePacks), [visiblePacks]);
   const currentQuestion = useMemo(() => {
     if (!state?.currentQuestionId || !state.pack) return null;
     for (const category of state.pack.categories) {
@@ -411,18 +446,32 @@ function App() {
               <li>Built for live hosting with clear score tracking</li>
               <li>Great for lesson warm-ups, review, and exit tickets</li>
             </ul>
-            <div className="home-cta-row"><button className="home-primary-cta" onClick={() => setScreen('pack-selection')}>Start Classroom Mode</button></div>
+            <div className="home-cta-row"><button className="home-primary-cta" onClick={() => { setSelectedLevel(null); setSelectedSubject(null); setPackSelectionStep('level'); setScreen('pack-selection'); }}>Start Classroom Mode</button></div>
           </div>
         </section>}
       {screen === 'pack-selection' && <section className="panel pack-selection-panel">
           <div className="pack-selection-header">
             <p className="pack-selection-kicker">Classroom Setup</p>
-            <h2>Select a Curriculum Pack</h2>
-            <p className="pack-selection-support">Choose a pack to launch Team Setup. Packs are grouped by curriculum so teachers can scan quickly and pick confidently.</p>
+            <h2>{packSelectionStep === 'level' ? 'Choose Year Group / Level' : packSelectionStep === 'subject' ? 'Choose a Subject' : 'Choose a Pack'}</h2>
+            <p className="pack-selection-support">{packSelectionStep === 'level' ? 'Start by choosing the learning level for your class.' : packSelectionStep === 'subject' ? 'Select a subject to narrow to relevant classroom packs.' : 'Choose a curriculum pack to launch Team Setup.'}</p>
           </div>
           {packsLoading && <div className="status-box status-loading"><p className="status-title">Preparing classroom packs…</p><p>Loading available packs from the content service.</p></div>}
           {packsError && <div className="status-box status-warning"><p className="status-title">API unavailable</p><p>{packsError}</p><p>Using local classroom fallback pack.</p></div>}
-          {!packsLoading && groupedPacks.map((group) => <div key={group.group} className="pack-group">
+          {!packsLoading && packSelectionStep === 'level' && <div className="selection-grid">
+              {levelOptions.map((level) => <button key={level.id} className="pack-card" onClick={() => { setSelectedLevel(level.id); setSelectedSubject(null); setPackSelectionStep('subject'); }}>
+                  <div className="pack-card-top"><strong className="pack-title">{level.label}</strong></div>
+                  <span className="pack-card-meta">{level.subtitle}</span>
+                </button>)}
+            </div>}
+          {!packsLoading && packSelectionStep === 'subject' && <>
+              <div className="selection-grid">
+                {subjectOptions.map((subject) => <button key={subject} className="pack-card" onClick={() => { setSelectedSubject(subject); setPackSelectionStep('pack'); }}>
+                    <div className="pack-card-top"><strong className="pack-title">{getDisplaySubject(subject)}</strong></div>
+                    <span className="pack-card-meta">{selectedLevel === 'stage5-grade5' ? 'Stage 5 / Grade 5 packs' : 'Matching packs'}</span>
+                  </button>)}
+              </div>
+            </>}
+          {!packsLoading && packSelectionStep === 'pack' && groupedPacks.map((group) => <div key={group.group} className="pack-group">
               <h3 className="pack-group-heading">{group.group}</h3>
               <div className="pack-grid">
                 {group.packs.map((pack) => {
@@ -434,12 +483,16 @@ function App() {
                       {recommended && <span className="recommended-badge">Recommended</span>}
                     </div>
                     <span className="pack-card-meta">{pack.stageLabel}</span>
-                    <span className="pack-card-meta">{pack.subjectLabel}</span>
+                    <span className="pack-card-meta">{getDisplaySubject(getPackSubject(pack))}</span>
                   </button>;
                 })}
               </div>
             </div>)}
-        <div className="actions"><button className="secondary-btn" onClick={() => setScreen('home')}>Back to Main Menu</button></div></section>}
+        <div className="actions">
+          {packSelectionStep === 'subject' && <button className="secondary-btn" onClick={() => { setSelectedSubject(null); setPackSelectionStep('level'); }}>Back to Year / Level</button>}
+          {packSelectionStep === 'pack' && <button className="secondary-btn" onClick={() => { setSelectedPack(null); setPackSelectionStep('subject'); }}>Back to Subject</button>}
+          <button className="secondary-btn" onClick={() => setScreen('home')}>Back to Main Menu</button>
+        </div></section>}
       {screen === 'team-setup' && <section className="panel team-setup-panel">
           <div className="team-setup-header">
             <p className="pack-selection-kicker">Classroom Setup</p>
