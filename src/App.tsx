@@ -127,6 +127,7 @@ function App() {
 
   useEffect(() => {
     if (screen !== 'pack-selection') return;
+    if (availablePacks.length > 0) return;
     let active = true;
     setPacksLoading(true);
     setPacksError(null);
@@ -149,7 +150,7 @@ function App() {
     return () => {
       active = false;
     };
-  }, [screen]);
+  }, [screen, availablePacks.length]);
 
   useEffect(() => {
     if (!mainRunning) return;
@@ -291,6 +292,8 @@ function App() {
 
   async function startGame() {
     if (!selectedPack) return;
+    const startMs = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (import.meta.env.DEV) console.time('[ui] startGame total');
     setPackStartError(null);
     setStartingGame(true);
 
@@ -320,10 +323,16 @@ function App() {
 
     setState({ pack: fullPack, teams, currentTeamTurnIndex: 0, usedQuestionIds: [], currentQuestionId: null, phase: 'board', stealPhase: false });
     setScreen('board');
+    if (import.meta.env.DEV) {
+      console.timeEnd('[ui] startGame total');
+      const duration = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - startMs;
+      console.debug(`[ui] startGame completed in ${Math.round(duration)}ms`);
+    }
   }
 
   function openQuestion(id: string) {
     if (!state) return;
+    if (import.meta.env.DEV) console.debug(`[ui] openQuestion clicked ${id} at ${Math.round(performance.now())}ms`);
     window.scrollTo({ top: 0, behavior: 'auto' });
     stopWarningSound(true);
     setState({ ...state, currentQuestionId: id, phase: 'question', stealPhase: false });

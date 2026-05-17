@@ -60,13 +60,25 @@ function toTwoAnswers(value: unknown, mcqOptions: string[]): [string, string] {
 
 async function fetchJson<T>(path: string): Promise<T> {
   const url = `${CONTENT_API_BASE_URL}${path}`;
+  const requestLabel = `[contentApi] ${path}`;
+  const requestStart = typeof performance !== 'undefined' ? performance.now() : Date.now();
+  if (import.meta.env.DEV) console.time(requestLabel);
   const response = await fetch(url);
   if (!response.ok) {
     const body = await response.text().catch(() => 'Unable to read response body');
     throw new Error(`Content API request failed (${response.status}) for ${path}. ${body.slice(0, 120)}`);
   }
-  return (await response.json()) as T;
+  const data = (await response.json()) as T;
+  if (import.meta.env.DEV) {
+    console.timeEnd(requestLabel);
+    const duration = (typeof performance !== 'undefined' ? performance.now() : Date.now()) - requestStart;
+    console.debug(`[contentApi] ${path} completed in ${Math.round(duration)}ms`);
+  }
+  return data;
 }
+
+let packSummariesCache: Pack[] | null = null;
+const packByIdCache = new Map<string, Pack>();
 
 function mapPackSummary(workerPack: WorkerPackSummary): Pack {
   const id = toNonEmptyString(workerPack.id, 'unknown-pack');
@@ -141,14 +153,27 @@ function mapCategory(workerCategory: WorkerCategory, index: number): Category {
 }
 
 export async function fetchPackSummaries(): Promise<Pack[]> {
+  if (packSummariesCache) {
+    if (import.meta.env.DEV) console.debug('[contentApi] /packs cache hit');
+    return packSummariesCache;
+  }
   const data = await fetchJson<{ packs?: unknown }>('/packs');
   if (!Array.isArray(data.packs)) throw new Error('Content API /packs response is invalid: expected a packs array.');
-  return data.packs.map((item) => mapPackSummary((item ?? {}) as WorkerPackSummary));
+  const mapped = data.packs.map((item) => mapPackSummary((item ?? {}) as WorkerPackSummary));
+  packSummariesCache = mapped;
+  return mapped;
 }
 
 export async function fetchPackById(packId: string): Promise<Pack> {
+  const cachedPack = packByIdCache.get(packId);
+  if (cachedPack) {
+    if (import.meta.env.DEV) console.debug(`[contentApi] /packs/${packId} cache hit`);
+    return cachedPack;
+  }
   const data = await fetchJson<WorkerPackResponse>(`/packs/${encodeURIComponent(packId)}`);
   const pack = mapPackSummary((data.pack ?? {}) as WorkerPackSummary);
   const categories = Array.isArray(data.categories) ? (data.categories as WorkerCategory[]).map(mapCategory) : [];
-  return { ...pack, categories };
+  const fullPack = { ...pack, categories };
+  packByIdCache.set(packId, fullPack);
+  return fullPack;
 }
