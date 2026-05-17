@@ -3,7 +3,7 @@ import { fetchPackById, fetchPackSummaries } from './api/contentApi';
 import { sampleMatterPack } from './data/sampleMatterPack';
 import type { GameState, LifelineKey, Pack, Team } from './types/game';
 
-type Screen = 'home' | 'pack-selection' | 'team-setup' | 'board' | 'question';
+type Screen = 'home' | 'pack-selection' | 'team-setup' | 'board' | 'question' | 'results';
 type PackSelectionStep = 'curriculum' | 'level' | 'subject' | 'pack';
 
 const TEAM_COLORS = ['#1d4ed8', '#047857', '#b45309', '#7c3aed', '#be123c', '#0f766e'];
@@ -367,11 +367,17 @@ function App() {
 
   function advanceTurn(nextState: GameState) {
     stopWarningSound(true);
+    const totalQ = nextState.pack.categories.reduce((sum, cat) => sum + cat.questions.length, 0);
     const nextIndex = (nextState.currentTeamTurnIndex + 1) % nextState.teams.length;
-    setState({ ...nextState, currentTeamTurnIndex: nextIndex, currentQuestionId: null, phase: 'board', stealPhase: false });
+    const cleanState: GameState = { ...nextState, currentTeamTurnIndex: nextIndex, currentQuestionId: null, phase: 'board', stealPhase: false };
+    setState(cleanState);
     setMainRunning(false);
     setOtherTeamRunning(false);
-    setScreen('board');
+    if (nextState.usedQuestionIds.length >= totalQ) {
+      setScreen('results');
+    } else {
+      setScreen('board');
+    }
   }
 
   function consumeQuestion(updatedTeams = state?.teams ?? []) {
@@ -403,6 +409,28 @@ function App() {
     }
     stopWarningSound(true);
     consumeQuestion(state.teams);
+  }
+
+  function playAgain() {
+    if (!state) return;
+    stopWarningSound(true);
+    setState({
+      ...state,
+      teams: state.teams.map((team) => ({ ...team, points: 0, lifelinesUsed: { mcq: false, hint: false, twoAnswers: false } })),
+      usedQuestionIds: [],
+      currentTeamTurnIndex: 0,
+      currentQuestionId: null,
+      phase: 'board',
+      stealPhase: false,
+    });
+    setMainTimer(MAIN_TIMER_SECONDS);
+    setMainRunning(false);
+    setOtherTeamTimer(OTHER_TEAM_TIMER_SECONDS);
+    setOtherTeamRunning(false);
+    setShowAnswer(false);
+    setShowMcq(false);
+    setShowHint(false);
+    setScreen('board');
   }
 
   function handleAnsweredByTeam(teamId: string) {
@@ -572,6 +600,39 @@ function App() {
           </div>
         </section>
       )}
+      {screen === 'results' && state && (() => {
+        const sortedTeams = [...state.teams].sort((a, b) => b.points - a.points);
+        const topScore = sortedTeams[0]?.points ?? 0;
+        const winners = sortedTeams.filter((t) => t.points === topScore);
+        const isDraw = winners.length > 1;
+        return (
+          <section className="panel results-panel">
+            <div className="results-header">
+              <p className="results-kicker">Game Over</p>
+              <h2 className="results-title">{state.pack.title}</h2>
+            </div>
+            <div className={`results-winner-banner ${isDraw ? 'results-winner-draw' : ''}`}>
+              {isDraw
+                ? <><p className="results-winner-label">It&apos;s a Draw!</p><p className="results-winner-names">{winners.map((t) => t.name).join(' & ')} — {topScore} pts each</p></>
+                : <><p className="results-winner-label">Winner</p><p className="results-winner-names">{winners[0].name}</p><p className="results-winner-score">{topScore} pts</p></>
+              }
+            </div>
+            <div className="results-standings">
+              {sortedTeams.map((team, idx) => (
+                <div key={team.id} className={`results-rank-card ${team.points === topScore ? 'results-rank-top' : ''}`}>
+                  <span className="results-rank-pos">{idx + 1}</span>
+                  <span className="results-rank-name">{team.name}</span>
+                  <span className="results-rank-score">{team.points} pts</span>
+                </div>
+              ))}
+            </div>
+            <div className="actions results-actions">
+              <button onClick={playAgain}>Play Again (same pack)</button>
+              <button className="secondary-btn" onClick={returnToPackSelection}>Return to Pack Selection</button>
+            </div>
+          </section>
+        );
+      })()}
       {screen === 'question' && state && currentQuestion && currentTeam && <section className="panel question-screen">
           <div className="question-screen-header">
             <p className="turn-pill question-team-pill">Current team: <strong>{currentTeam.name}</strong></p>
