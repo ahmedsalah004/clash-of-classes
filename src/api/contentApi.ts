@@ -22,7 +22,7 @@ interface WorkerPackSummary {
   subject?: unknown;
   subject_label?: unknown;
 }
-interface WorkerQuestion { id?: unknown; category_id?: unknown; prompt?: unknown; question_text?: unknown; question?: unknown; answer?: unknown; hint?: unknown; points?: unknown; card_order?: unknown; mcq_options?: unknown; two_answers_options?: unknown; }
+interface WorkerQuestion { id?: unknown; category_id?: unknown; prompt?: unknown; question_text?: unknown; question?: unknown; answer?: unknown; hint?: unknown; points?: unknown; card_order?: unknown; mcq_options?: unknown; mcq_a?: unknown; mcq_b?: unknown; mcq_c?: unknown; mcq_d?: unknown; correct_mcq?: unknown; two_answers_options?: unknown; }
 interface WorkerCategory { id?: unknown; name?: unknown; questions?: unknown; }
 interface WorkerPackResponse { pack?: WorkerPackSummary; categories?: unknown; }
 
@@ -128,7 +128,12 @@ function mapPackSummary(workerPack: WorkerPackSummary): Pack {
 }
 
 function mapQuestion(workerQuestion: WorkerQuestion, categoryId: string, index: number): Question {
-  const mcqOptions = toMcqOptions(workerQuestion.mcq_options);
+  const mcqFromCombined = toMcqOptions(workerQuestion.mcq_options);
+  const mcqOptions = mcqFromCombined.length > 0
+    ? mcqFromCombined
+    : [workerQuestion.mcq_a, workerQuestion.mcq_b, workerQuestion.mcq_c, workerQuestion.mcq_d]
+        .map((v) => String(v ?? '').trim())
+        .filter(Boolean);
   return {
     id: toNonEmptyString(workerQuestion.id, `${categoryId}-${index + 1}`),
     categoryId,
