@@ -22,7 +22,32 @@ interface WorkerPackSummary {
   subject?: unknown;
   subject_label?: unknown;
 }
-interface WorkerQuestion { id?: unknown; category_id?: unknown; prompt?: unknown; question_text?: unknown; question?: unknown; answer?: unknown; hint?: unknown; points?: unknown; card_order?: unknown; mcq_options?: unknown; two_answers_options?: unknown; }
+interface WorkerQuestion {
+  id?: unknown;
+  category_id?: unknown;
+  prompt?: unknown;
+  question_text?: unknown;
+  question?: unknown;
+  answer?: unknown;
+  hint?: unknown;
+  points?: unknown;
+  card_order?: unknown;
+  mcq_options?: unknown;
+  two_answers_options?: unknown;
+  correct_mcq?: unknown;
+  mcq_a?: unknown;
+  mcq_b?: unknown;
+  mcq_c?: unknown;
+  mcq_d?: unknown;
+  option_a?: unknown;
+  option_b?: unknown;
+  option_c?: unknown;
+  option_d?: unknown;
+  answer_a?: unknown;
+  answer_b?: unknown;
+  answer_c?: unknown;
+  answer_d?: unknown;
+}
 interface WorkerCategory { id?: unknown; name?: unknown; questions?: unknown; }
 interface WorkerPackResponse { pack?: WorkerPackSummary; categories?: unknown; }
 
@@ -47,6 +72,39 @@ function toMcqOptions(value: unknown): string[] {
   if (Array.isArray(value)) return value.map((v) => String(v).trim()).filter(Boolean).slice(0, 4);
   if (typeof value === 'string') return value.split('|').map((v) => v.trim()).filter(Boolean).slice(0, 4);
   return [];
+}
+
+function toOptionsGroup(values: unknown[]): string[] {
+  const parsed = values.map((v) => (typeof v === 'string' ? v.trim() : '')).filter(Boolean);
+  return parsed.length > 0 ? parsed.slice(0, 4) : [];
+}
+
+function toMcqOptionsWithFallbacks(workerQuestion: WorkerQuestion): string[] {
+  const fromMcqOptions = toMcqOptions(workerQuestion.mcq_options);
+  if (fromMcqOptions.length > 0) return fromMcqOptions;
+
+  const fromMcqColumns = toOptionsGroup([
+    workerQuestion.mcq_a,
+    workerQuestion.mcq_b,
+    workerQuestion.mcq_c,
+    workerQuestion.mcq_d,
+  ]);
+  if (fromMcqColumns.length > 0) return fromMcqColumns;
+
+  const fromOptionColumns = toOptionsGroup([
+    workerQuestion.option_a,
+    workerQuestion.option_b,
+    workerQuestion.option_c,
+    workerQuestion.option_d,
+  ]);
+  if (fromOptionColumns.length > 0) return fromOptionColumns;
+
+  return toOptionsGroup([
+    workerQuestion.answer_a,
+    workerQuestion.answer_b,
+    workerQuestion.answer_c,
+    workerQuestion.answer_d,
+  ]);
 }
 
 function toTwoAnswers(value: unknown, mcqOptions: string[]): [string, string] {
@@ -128,7 +186,19 @@ function mapPackSummary(workerPack: WorkerPackSummary): Pack {
 }
 
 function mapQuestion(workerQuestion: WorkerQuestion, categoryId: string, index: number): Question {
-  const mcqOptions = toMcqOptions(workerQuestion.mcq_options);
+  const mcqOptions = toMcqOptionsWithFallbacks(workerQuestion);
+  if (import.meta.env.DEV && mcqOptions.length === 0) {
+    console.warn('[contentApi] Missing MCQ lifeline data for question', {
+      id: workerQuestion.id,
+      category_id: workerQuestion.category_id,
+      expectedColumns: [
+        'mcq_options',
+        'mcq_a', 'mcq_b', 'mcq_c', 'mcq_d',
+        'option_a', 'option_b', 'option_c', 'option_d',
+        'answer_a', 'answer_b', 'answer_c', 'answer_d',
+      ],
+    });
+  }
   return {
     id: toNonEmptyString(workerQuestion.id, `${categoryId}-${index + 1}`),
     categoryId,
