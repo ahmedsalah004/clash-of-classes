@@ -8,10 +8,11 @@ interface Env {
   ALLOWED_ORIGINS?: string;
 }
 
-type CurriculumId = "cambridge-stage5-science" | "american-grade5-science";
+type CurriculumId = string;
 
 interface CurriculumConfig {
-  id: CurriculumId;
+  id: string;
+  idPrefix: string;
   label: string;
   packsUrlVar: keyof Env;
   categoryPlanUrlVar: keyof Env;
@@ -64,15 +65,17 @@ interface Question {
 
 const CURRICULA: CurriculumConfig[] = [
   {
-    id: "cambridge-stage5-science",
-    label: "Cambridge Stage 5 Science",
+    id: "cambridge-stage5",
+    idPrefix: "cambridge-stage5",
+    label: "Cambridge Stage 5",
     packsUrlVar: "CAMBRIDGE_PACKS_CSV_URL",
     categoryPlanUrlVar: "CAMBRIDGE_CATEGORY_PLAN_CSV_URL",
     questionBankUrlVar: "CAMBRIDGE_QUESTION_BANK_CSV_URL",
   },
   {
-    id: "american-grade5-science",
-    label: "American Grade 5 Science",
+    id: "american-grade5",
+    idPrefix: "american-grade5",
+    label: "American Grade 5",
     packsUrlVar: "AMERICAN_PACKS_CSV_URL",
     categoryPlanUrlVar: "AMERICAN_CATEGORY_PLAN_CSV_URL",
     questionBankUrlVar: "AMERICAN_QUESTION_BANK_CSV_URL",
@@ -237,23 +240,29 @@ function findNumericByKnownKeys(record: Record<string, string | number | boolean
   return 0;
 }
 
-function mapPack(curriculumId: CurriculumId, record: Record<string, string | number | boolean>): Pack {
+function mapPack(curriculum: CurriculumConfig, record: Record<string, string | number | boolean>): Pack {
   const name = findByKnownKeys(record, ["name", "pack_title", "title", "pack_id", "id"]);
   const inferredCambridgeStage = findByKnownKeys(record, ["stage", "cambridge_stage"]);
   const inferredAmericanGrade = findByKnownKeys(record, ["grade", "us_grade", "grade_level"]);
 
-  const schoolTrack = findByKnownKeys(record, ["school_track"]) || (curriculumId === "cambridge-stage5-science" ? "British" : "American");
+  const isCambridge = curriculum.idPrefix.startsWith("cambridge");
+  const schoolTrack = findByKnownKeys(record, ["school_track"]) || (isCambridge ? "British" : "American");
   const curriculumSystem =
-    findByKnownKeys(record, ["curriculum_system"]) || (curriculumId === "cambridge-stage5-science" ? "IG" : "");
+    findByKnownKeys(record, ["curriculum_system"]) || (isCambridge ? "IG" : "");
   const phase =
     findByKnownKeys(record, ["phase"]) ||
-    (curriculumId === "cambridge-stage5-science" ? "Cambridge Primary" : "");
+    (isCambridge ? "Cambridge Primary" : "");
   const levelLabel =
     findByKnownKeys(record, ["level_label"]) ||
     inferredCambridgeStage ||
     inferredAmericanGrade ||
-    (curriculumId === "cambridge-stage5-science" ? "Stage 5" : "Grade 5");
+    (isCambridge ? "Stage 5" : "Grade 5");
   const gradeEquivalent = findByKnownKeys(record, ["grade_equivalent", "grade", "us_grade", "grade_level"]);
+
+  const subject = findByKnownKeys(record, ["subject"]).toLowerCase().trim();
+  const curriculumId: CurriculumId = subject
+    ? `${curriculum.idPrefix}-${subject}`
+    : `${curriculum.idPrefix}-science`;
 
   return {
     ...record,
@@ -290,16 +299,6 @@ function mapPack(curriculumId: CurriculumId, record: Record<string, string | num
   };
 }
 
-function buildSubjectIndex(rows: Array<Record<string, string | number | boolean>>): Map<string, string> {
-  const index = new Map<string, string>();
-  for (const row of rows) {
-    const packId = findByKnownKeys(row, ["pack_id", "pack", "pack_slug", "id"]);
-    const subject = findByKnownKeys(row, ["subject", "subject_label", "learning_area", "strand"]);
-    if (!packId || !subject) continue;
-    if (!index.has(packId)) index.set(packId, subject);
-  }
-  return index;
-}
 
 function mapCategory(record: Record<string, string | number | boolean>): Category {
   return {
@@ -328,23 +327,9 @@ function mapQuestion(record: Record<string, string | number | boolean>): Questio
 
 async function getAllPacks(env: Env): Promise<Pack[]> {
   const tasks = CURRICULA.map(async (curriculum) => {
-    const [packRows, questionRows] = await Promise.all([
-      fetchCsvRows(env[curriculum.packsUrlVar] as string),
-      fetchCsvRows(env[curriculum.questionBankUrlVar] as string),
-    ]);
-    const subjectByPackId = buildSubjectIndex(questionRows);
-    return packRows
-      .map((row) => {
-        const pack = mapPack(curriculum.id, row);
-        const subject = subjectByPackId.get(pack.id);
-        if (subject) {
-          pack.subject = subject;
-        } else if (!pack.subject) {
-          console.warn(`[content-api] Missing subject for pack_id=${pack.id} (${pack.name})`);
-        }
-        return pack;
-      })
-      .filter((pack) => pack.active);
+    const url = env[curriculum.packsUrlVar] as string;
+    const rows = await fetchCsvRows(url);
+    return rows.map((row) => mapPack(curriculum, row)).filter((pack) => pack.active);
   });
 
   const nested = await Promise.all(tasks);
@@ -398,7 +383,7 @@ export default {
           return toJson({ error: "Pack not found.", packId }, 404, corsHeaders);
         }
 
-        const curriculum = CURRICULA.find((c) => c.id === pack.curriculum_id)!;
+        const curriculum = CURRICULA.find((c) => pack.curriculum_id.startsWith(c.idPrefix))!;
         const [categoryRows, questionRows] = await Promise.all([
           fetchCsvRows(env[curriculum.categoryPlanUrlVar] as string),
           fetchCsvRows(env[curriculum.questionBankUrlVar] as string),
