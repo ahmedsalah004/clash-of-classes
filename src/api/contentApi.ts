@@ -147,10 +147,6 @@ function mapPackSummary(workerPack: WorkerPackSummary): Pack {
   const isAmerican = curriculum.includes('american') || curriculum.includes('us') || curriculum.includes('ngss');
   const isStage5 = curriculum.includes('stage-5') || curriculum.includes('stage5') || curriculum.includes('s5');
   const isGrade5 = curriculum.includes('grade-5') || curriculum.includes('grade5') || curriculum.includes('g5');
-  const subjectSource = `${explicitSubject ?? ''} ${title}`.toLowerCase();
-  const isScience = /\bscience\b/.test(subjectSource);
-  const isMath = /\bmath(s)?\b/.test(subjectSource);
-  const isEnglish = /\benglish\b/.test(subjectSource) || /\bela\b/.test(subjectSource) || /\blanguage[\s-]?arts\b/.test(subjectSource);
 
   const stageLabel = isCambridge
     ? `Cambridge ${isStage5 ? 'Stage 5' : 'Primary'}`
@@ -158,13 +154,24 @@ function mapPackSummary(workerPack: WorkerPackSummary): Pack {
       ? `American ${isGrade5 ? 'Grade 5' : 'Curriculum'}`
       : 'Classroom Pack';
 
-  const subjectLabel = isScience
-    ? 'Science'
-    : isMath
-      ? (isCambridge ? 'Maths' : 'Math')
-      : isEnglish
-        ? (isCambridge ? 'English' : 'ELA')
-        : explicitSubject ?? 'Curriculum';
+  // Trust the explicit subject from the Worker/sheet first.
+  // Only fall back to regex inference when no explicit subject is provided.
+  let subjectLabel: string;
+  if (explicitSubject) {
+    subjectLabel = explicitSubject;
+  } else {
+    const inferSource = title.toLowerCase();
+    const isScience = /\bscience\b/.test(inferSource);
+    const isMath = /\bmath(s)?\b/.test(inferSource);
+    const isEnglish = /\benglish\b/.test(inferSource) || /\bela\b/.test(inferSource) || /\blanguage[\s-]?arts\b/.test(inferSource);
+    subjectLabel = isScience
+      ? 'Science'
+      : isMath
+        ? (isCambridge ? 'Maths' : 'Math')
+        : isEnglish
+          ? (isCambridge ? 'English' : 'ELA')
+          : 'Curriculum';
+  }
 
   return {
     id,

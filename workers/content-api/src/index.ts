@@ -240,7 +240,7 @@ function findNumericByKnownKeys(record: Record<string, string | number | boolean
 function mapPack(curriculumId: CurriculumId, record: Record<string, string | number | boolean>): Pack {
   const name = findByKnownKeys(record, ["name", "pack_title", "title", "pack_id", "id"]);
   const inferredCambridgeStage = findByKnownKeys(record, ["stage", "cambridge_stage"]);
-  const inferredAmericanGrade = findByKnownKeys(record, ["grade", "us_grade"]);
+  const inferredAmericanGrade = findByKnownKeys(record, ["grade", "us_grade", "grade_level"]);
 
   const schoolTrack = findByKnownKeys(record, ["school_track"]) || (curriculumId === "cambridge-stage5-science" ? "British" : "American");
   const curriculumSystem =
@@ -253,7 +253,7 @@ function mapPack(curriculumId: CurriculumId, record: Record<string, string | num
     inferredCambridgeStage ||
     inferredAmericanGrade ||
     (curriculumId === "cambridge-stage5-science" ? "Stage 5" : "Grade 5");
-  const gradeEquivalent = findByKnownKeys(record, ["grade_equivalent", "grade", "us_grade"]);
+  const gradeEquivalent = findByKnownKeys(record, ["grade_equivalent", "grade", "us_grade", "grade_level"]);
 
   return {
     ...record,
